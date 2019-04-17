@@ -1,0 +1,23 @@
+sudo: required
+language: python
+python:
+  - '3.7'
+services:
+  - docker
+
+install:
+  - pip install coveralls
+  
+before_install:
+- docker build -t chimera_img .
+- docker ps -a
+
+script:
+  - docker run -it -d --rm --name chimera_container potboiler_img /bin/bash
+  - docker exec -it chimera_container pytest --cov=chimera
+  - docker cp chimera_container:/app/.coverage .
+  - docker stop chimera_container
+
+after_success:
+  - coverage combine --append
+  - coveralls

@@ -1,0 +1,14 @@
+name: chimera
+
+channels:
+  - defaults
+
+dependencies:
+  - Flask>=1.0
+  - Jinja2>=2.10.1
+  - MarkupSafe
+  - pytest
+  - python=3.7
+  - pip:
+    - coveralls
+    - pytest-cov

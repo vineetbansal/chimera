@@ -14,3 +14,4 @@ dependencies:
     - coveralls
     - pytest-cov
     - seqlogo
+    - weblogo==3.6.0

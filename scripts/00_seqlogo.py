@@ -13,6 +13,7 @@ if __name__ == '__main__':
         # then the following 2 lines can simplified to:
         #   pfm = seqlogo.Pfm(df, alphabet_type='AA')
         #   seqlogo.seqlogo(pfm, ic_scale=False, size='xlarge', format='png', filename='logo.png', stacks_per_line=pfm.length)
+
         pfm = seqlogo.Pfm(df, alphabet_type='custom', alphabet=df.index.values, background=utils._AA_background)
-        x = seqlogo.seqlogo(pfm, ic_scale=False, size='xlarge', format='png', filename='logo.png', stacks_per_line=pfm.length, color_scheme='hydrophobicity')
-        print(x)
+        # pfm.ic = 4.33
+        seqlogo.seqlogo(pfm, ic_scale=True, size='xlarge', format='png', filename='logo.png', stacks_per_line=pfm.length, color_scheme='hydrophobicity')

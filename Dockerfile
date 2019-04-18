@@ -1,5 +1,12 @@
 FROM continuumio/miniconda3
 
+RUN set -x && \
+  apt-get update && \
+  apt-get install --no-install-recommends --no-install-suggests -y \
+    ghostscript && \
+  apt-get clean && \
+rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 EXPOSE 5000
 
 RUN mkdir /app/ && mkdir /app/src && mkdir /app/tests

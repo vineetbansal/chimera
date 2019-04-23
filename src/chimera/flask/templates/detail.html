@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block main %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+              <h5 class="card-header">{{pfam_id}} Per-Position Binding Frequencies</h5>
+
+                {% if imgs %}
+                <ul class="list-group list-group-flush">
+                {% for img in imgs %}
+                    <li class="list-group-item">
+                        <img src="data:image/png;base64, {{img}}"/>
+                    </li>
+                {% endfor %}
+                </ul>
+
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -29,3 +29,9 @@ class TsvTestCase(TestCase):
             pfam_ids = pd.unique(df['pfam_id'])
             self.assertEqual(2263, len(pfam_ids))
 
+    def testNBindingFreqs(self):
+        with importlib.resources.path(chimera.data, 'interacdome_allresults.tsv') as path:
+            df = pd.read_csv(path, sep='\t', header=0)
+            row = df[(df.pfam_id == 'PF00004_AAA') & (df.ligand_type == 'ion')].iloc[0]
+            self.assertEqual(row.domain_length, len(row.binding_frequencies.split(',')))
+

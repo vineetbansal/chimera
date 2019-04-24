@@ -11,7 +11,12 @@ setup(
 
     package_dir={'': 'src'},
     packages=find_namespace_packages(where='src'),
-    package_data={'chimera': ['config.json'], 'chimera.data': ['*.tsv'], 'chimera.data.pfms': ['*.pfm']},
+    package_data={
+        'chimera': ['config.json'],
+        'chimera.data': ['*.tsv'],
+        'chimera.data.pfms': ['*.pfm'],
+        'chimera.data.sample': ['*.*']
+    },
 
     zip_safe=True,
     test_suite='tests'

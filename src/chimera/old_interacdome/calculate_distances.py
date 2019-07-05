@@ -476,6 +476,8 @@ def update_distlist_files(distlist_infiles):
     distlist_inhandle = gzip.open(distlist_filename) if distlist_filename.endswith('gz') else open(distlist_filename)
     for dline in distlist_inhandle:
 
+      dline = dline.decode('utf8')
+
       if dline.startswith('#'):
         lines.append([dline])
         continue
@@ -509,7 +511,7 @@ def update_distlist_files(distlist_infiles):
     for int_line in integrals_inhandle:
       if 'with absolute error' not in int_line:
         euc_dist, sd1, sd2 = int_line.strip().split('\t')
-        overlap = integrals_inhandle.next().strip()
+        overlap = next(integrals_inhandle).strip()
         integrals[(euc_dist, tuple(sorted([sd1, sd2])))] = (overlap.split()[0], overlap.split()[-1])
     integrals_inhandle.close()
     call(['rm', rscript_integral_results])
@@ -525,22 +527,22 @@ def update_distlist_files(distlist_infiles):
     # Write out each of the original lines, in order, with new features:
     for origline in lines:
       if origline[0].startswith('#'):
-        processed_outhandle.write('\t'.join(origline))
+        processed_outhandle.write(('\t'.join(origline)).encode('utf8'))
         continue
 
-      processed_outhandle.write('\t'.join(origline[:8]) + '\t')
+      processed_outhandle.write(('\t'.join(origline[:8]) + '\t').encode('utf8'))
       if float(origline[7]) <= DISTANCE_CUTOFF:
-        processed_outhandle.write('\t'.join([integrals[(origline[7],
+        processed_outhandle.write(('\t'.join([integrals[(origline[7],
                                                         tuple(sorted([vdw.get(origline[4], '1.5'),
                                                                       vdw.get(origline[6], '1.5')])))][0],
                                              integrals[(origline[7],
                                                         tuple(sorted([vdw.get(origline[4], '1.5'),
                                                                       vdw.get(origline[6], '1.5')])))][1],
                                              integrals[(origline[7], tuple(sorted(['1.5', '1.5'])))][0],
-                                             integrals[(origline[7], tuple(sorted(['1.5', '1.5'])))][1]]))
+                                             integrals[(origline[7], tuple(sorted(['1.5', '1.5'])))][1]])).encode('utf8'))
       else:
-        processed_outhandle.write('\t'.join(['N/A', 'N/A', 'N/A', 'N/A']))  # we didn't calculate integrals here
-      processed_outhandle.write('\t' + '\t'.join(origline[12:]) + '\n')  # sequence is written, regardless
+        processed_outhandle.write(('\t'.join(['N/A', 'N/A', 'N/A', 'N/A'])).encode('utf8'))  # we didn't calculate integrals here
+      processed_outhandle.write(('\t' + '\t'.join(origline[12:]) + '\n').encode('utf8'))  # sequence is written, regardless
     processed_outhandle.close()
 
     # overwrite the original file IFF we finished without an error

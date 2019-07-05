@@ -12,6 +12,7 @@ dependencies:
   - pip
   - pytest
   - python=3.7
+  - tqdm
   - pip:
     - coveralls
     - pytest-cov

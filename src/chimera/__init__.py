@@ -8,11 +8,7 @@ from types import SimpleNamespace
 import json
 from importlib.resources import read_text
 
-import chimera 
-
-
-def hello():
-    return "Hello World"
+import chimera
 
 
 def setup_config():

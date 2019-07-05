@@ -15,9 +15,10 @@ if __name__ == '__main__':
 
     pdb_ids = annot_df.pdb_id.unique().tolist()
     # TEMPORARY
-    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2l')]
+    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2lxp')]
 
     for pdb_id in pdb_ids:
+        print(f'Processing PDB {pdb_id}')
         df = annot_df[annot_df.pdb_id == pdb_id]
 
         pdb_chains = df.pdb_chain.tolist()
@@ -32,13 +33,15 @@ if __name__ == '__main__':
                 receptor_filepaths=[os.path.join(receptor_dir, f'{pdb_id}{pdb_chain}.pdb') for pdb_chain in pdb_chains],
                 ligand_ids=ligand_ids,
                 ligand_filepaths=[os.path.join(ligand_dir, f'{pdb_id}_{ligand_id}_{ligand_chain}_{ligand_sno}.pdb') for ligand_id, ligand_chain, ligand_sno in zip(ligand_ids, ligand_chains, ligand_snos)],
-                distance_filepath='distance.gz',
+                distance_filepath='distance.txt',
                 include_backbone=False,
-                distance_cutoff=20
+                distance_cutoff=20,
+                calculate_overlap=True,
+                compressed=False
             )
 
-            s = gzip.open('distance.gz', 'rb').read().decode('utf8')
-            s1 = gzip.open(os.path.join('/media/vineetb/t5-vineetb/biolip/processed_data/distances/', pdb_id[0], pdb_id[:2], f'{pdb_id}_distances.txt.gz'), 'rb').read().decode('utf8')
+            s = open('distance.txt', 'rb').read().decode('utf8')
+            s1 = gzip.open(os.path.join('/media/vineetb/t5-vineetb/biolip/processed_data/distances_overlap/', pdb_id[0], pdb_id[:2], f'{pdb_id}_distances.txt.gz'), 'rb').read().decode('utf8')
             if (s==s1):
                 print(pdb_id + ' GOOD')
             else:

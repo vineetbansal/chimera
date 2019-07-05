@@ -1,12 +1,19 @@
 from collections import defaultdict
 import numpy as np
+from scipy.integrate import quad
+from scipy.stats import norm
 import gzip
 import logging
+from functools import lru_cache
+from tqdm import tqdm
 
 from prody import parsePDB
 from prody.atomic.hierview import HierView
 from prody.atomic import AAMAP
 
+from chimera.utils import vdw_radius
+
+tol = np.finfo(float).eps ** 0.25
 logger = logging.getLogger(__name__)
 
 # TODO: Whether to ignore residue insertion code (col 27 in pdb) when identifying unique residues
@@ -37,7 +44,51 @@ ANNOTATION_COLUMNS = [
 ]
 
 
-def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, ligand_filepaths, distance_filepath, include_backbone=False, distance_cutoff=20, compressed=True):
+def _format_integral(x):
+    s = f'{x:.7g}'
+    if s=='0.0001':
+        return '1e-04'
+    else:
+        return s
+
+
+def _format_error(x):
+    s = f'{x:.2g}'
+    if s=='0.0001':
+        return '1e-04'
+    else:
+        return s
+
+@lru_cache(maxsize=None)
+def normobj(mu, sd):
+    return norm(mu, sd)
+
+
+@lru_cache(maxsize=None)
+def minf1f2(x, mu1, mu2, sd1, sd2):
+    return min(normobj(mu1, sd1).pdf(x), normobj(mu2, sd2).pdf(x))
+
+
+@lru_cache(maxsize=None)
+def overlap_radii(dist, receptor_atom=None, ligand_atom=None, receptor_atom_vdw_radius=None,
+                  ligand_atom_vdw_radius=None):
+
+    return quad(
+        func=minf1f2,
+        a=-np.inf,
+        b=np.inf,
+        args=(
+            0,
+            dist,
+            receptor_atom_vdw_radius or vdw_radius(receptor_atom),
+            ligand_atom_vdw_radius or vdw_radius(ligand_atom)
+        ),
+        epsabs=tol,
+        epsrel=tol
+    )
+
+
+def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, ligand_filepaths, distance_filepath, include_backbone=False, distance_cutoff=20, compressed=True, calculate_overlap=True):
 
     _open = open
     if compressed:
@@ -71,9 +122,11 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
 
         receptor_atoms = parsePDB(receptor_filepath, altloc='A1')  # TODO: Find breaking case if altloc is not specified
         receptor_selection = receptor_atoms.select('stdaa and not hydrogen')
+
         for residue in HierView(receptor_selection).iterResidues():
             residue_number = residue.getResnum()
             residue_name = residue.getResname()
+
             # positions[residue_number] = AAMAP[residue_name]  # TODO: ADD if IGNORE_INSERTION_CODE==True
 
             _flag = False  # TODO: REMOVE once the first-4 assumption is removed
@@ -105,53 +158,67 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
 
         ligand_atoms = parsePDB(ligand_filepath)
         ligand_selection = ligand_atoms.select('hetatm and not hydrogen')
-        for ligand_atom in ligand_selection:
-            # Special processing for nucleic acids
-            if ligand_id == 'NUC':
-                ligand_atom_name = ligand_atom.getName()
 
-                # Get other atom names in the same chain and residue as *this* atom
-                other_atom_names = HierView(
-                    ligand_atom.getAtomGroup()
-                ).getResidue(
-                    chid=ligand_atom.getChid(),
-                    resnum=ligand_atom.getResnum()
-                ).getNames()
+        with tqdm(total=ligand_selection.numAtoms()) as pbar:
 
-                # TODO: There has to be a more direct way to do this!
-                ligand_sub_type = 'RNA' if "O2'" in other_atom_names else 'DNA'
-                if "'" in ligand_atom_name or 'P' in ligand_atom_name:
-                    ligand_sub_type += 'B'
-            else:
-                ligand_sub_type = ''
+            for ligand_atom in ligand_selection:
+                ligand_element = ligand_atom.getElement()
+                # logger.info(f'Processing ligand {ligand_element}')
 
-            for i, ts in atoms.items():
-                n = len(ts)
-                for j, t in enumerate(ts, start=1):
-                    _x, _y, _z, _e = t
-                    dist = np.linalg.norm(np.array([_x, _y, _z]) - ligand_atom.getCoords())
-                    if dist <= distance_cutoff:
+                # Special processing for nucleic acids
+                if ligand_id == 'NUC':
+                    ligand_atom_name = ligand_atom.getName()
 
-                        f.write(('\t'.join([
-                            f'{pdb_id}{pdb_chain}',
-                            f'{i - start_index + 1}',
-                            f'{positions[i]}',
-                            f'{j}/{n}',
-                            f'{_e}',
-                            f'{ligand_id}{ligand_sub_type}',
-                            f'{ligand_atom.getElement()}',
-                            f'{dist}',
-                            'N/A',
-                            'N/A',
-                            'N/A',
-                            'N/A'
-                        ])).encode('utf8'))
+                    # Get other atom names in the same chain and residue as *this* atom
+                    other_atom_names = HierView(
+                        ligand_atom.getAtomGroup()
+                    ).getResidue(
+                        chid=ligand_atom.getChid(),
+                        resnum=ligand_atom.getResnum()
+                    ).getNames()
 
-                        if previous_pdb_chain != pdb_chain:
-                            f.write(
-                                ('\t' + ''.join([positions[aa_index] if aa_index in positions else 'X' for aa_index in range(start_index, max(positions.keys())+1)]) +
-                                 '\n').encode('utf8'))
-                            previous_pdb_chain = pdb_chain
-                        else:
-                            f.write(b'\t\n')
+                    # TODO: There has to be a more direct way to do this!
+                    ligand_sub_type = 'RNA' if "O2'" in other_atom_names else 'DNA'
+                    if "'" in ligand_atom_name or 'P' in ligand_atom_name:
+                        ligand_sub_type += 'B'
+                else:
+                    ligand_sub_type = ''
+
+                for i, ts in atoms.items():
+                    n = len(ts)
+                    for j, t in enumerate(ts, start=1):
+                        _x, _y, _z, _e = t
+                        dist = np.linalg.norm(np.array([_x, _y, _z]) - ligand_atom.getCoords())
+                        if dist <= distance_cutoff:
+
+                            r1 = e1 = r2 = e2 = 'N/A'
+                            if calculate_overlap:
+                                r1, e1 = overlap_radii(dist=dist, receptor_atom=_e, ligand_atom=ligand_element)
+                                r2, e2 = overlap_radii(dist=dist, receptor_atom_vdw_radius=1.5, ligand_atom_vdw_radius=1.5)
+
+                            f.write(('\t'.join([
+                                f'{pdb_id}{pdb_chain}',
+                                f'{i - start_index + 1}',
+                                f'{positions[i]}',
+                                f'{j}/{n}',
+                                f'{_e}',
+                                f'{ligand_id}{ligand_sub_type}',
+                                f'{ligand_element}',
+                                f'{dist}',
+                                _format_integral(r1),
+                                _format_error(e1),
+                                _format_integral(r2),
+                                _format_error(e2)
+                            ])).encode('utf8'))
+
+                            if previous_pdb_chain != pdb_chain:
+                                f.write(
+                                    ('\t' + ''.join([positions[aa_index] if aa_index in positions else 'X' for aa_index in range(start_index, max(positions.keys())+1)]) +
+                                     '\n').encode('utf8'))
+                                previous_pdb_chain = pdb_chain
+                            else:
+                                f.write(b'\t\n')
+                pbar.update(1)
+
+    pbar.close()
     f.close()

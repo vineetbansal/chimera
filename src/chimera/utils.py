@@ -21,6 +21,7 @@ with importlib.resources.path(chimera.data, 'vdw.txt') as path:
         ),
         index_col=1
     )
+    vdw_df.index = vdw_df.index.str.lower()
     vdw_df = vdw_df.replace({pd.np.nan: None})
 
 
@@ -30,5 +31,5 @@ def vdw_radius(element):
     :param element: Element symbol (case-sensitive)
     :return: Float indicating the VDW radius
     """
-    s = vdw_df.loc[element]
+    s = vdw_df.loc[element.lower()]
     return s.vdw_radius or s.ionic_radius or 1.5

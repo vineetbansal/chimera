@@ -5,7 +5,7 @@ import pandas as pd
 from chimera.distance import ANNOTATION_COLUMNS, create_distance_file
 
 ANNOTATION_FILE = '/media/vineetb/t5-vineetb/biolip/processed_data/annotations/current_annotations.txt'
-COMPRESS = True
+COMPRESS = False
 
 if __name__ == '__main__':
     receptor_dir = '/media/vineetb/t5-vineetb/biolip/downloaded_data/receptor/'
@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     pdb_ids = annot_df.pdb_id.unique().tolist()
     # TEMPORARY
-    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2lo3')]
+    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2l')]
 
     for pdb_id in pdb_ids:
         print(f'Processing PDB {pdb_id}')

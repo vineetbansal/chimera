@@ -21,6 +21,10 @@ logger = logging.getLogger(__name__)
 # Should ideally be False, but set to True for backwards compatibility
 IGNORE_INSERTION_CODE = True
 
+# TODO: Whether to 'cache' normal distribution overlap numbers, but in reverse order, emulating
+# behavior of old code
+EMULATE_CACHING_BUG = False
+
 ANNOTATION_COLUMNS = [
     'pdb_id',
     'pdb_chain',
@@ -221,7 +225,28 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
     df = pd.DataFrame(_rows)
 
     if calculate_overlap:
-        df[['overlap_vdw_radii', 'integral_error_vdw_radii']] = df.apply(lambda row: pd.Series(overlap_radii(row['euclidean_distance'], vdw_radius(row['receptor_atom_value']), vdw_radius(row['ligand_atom_value']))), axis=1)
-        df[['overlap_1.5', 'integral_error_1.5']] = df.apply(lambda row: pd.Series(overlap_radii(row['euclidean_distance'], 1.5, 1.5)), axis=1)
+        tqdm.pandas()
+        logger.info('adding receptor atom vdw radius')
+        df['receptor_atom_radius'] = df.progress_apply(lambda row: vdw_radius(row['receptor_atom_value']), axis=1)
+        logger.info('adding ligand atom vdw radius')
+        df['ligand_atom_radius'] = df.progress_apply(lambda row: vdw_radius(row['ligand_atom_value']), axis=1)
+
+        logger.info('calculating vdw overlap areas')
+        df[['overlap_vdw_radii', 'integral_error_vdw_radii']] = df.progress_apply(lambda row: pd.Series(overlap_radii(row['euclidean_distance'], row['receptor_atom_radius'], row['ligand_atom_radius'])), axis=1)
+        logger.info('calculating standard overlap areas')
+        df[['overlap_1.5', 'integral_error_1.5']] = df.progress_apply(lambda row: pd.Series(overlap_radii(row['euclidean_distance'], 1.5, 1.5)), axis=1)
+
+        if EMULATE_CACHING_BUG:
+            overlaps = {}
+            logger.info('"caching" calculated overlap areas to emulate legacy behavior')
+            for idx in df.index:
+                row = df.iloc[idx]
+                sd1, sd2 = sorted([vdw_radius(row['receptor_atom_value']), vdw_radius(row['ligand_atom_value'])])
+                overlaps[(row['euclidean_distance'], (sd1, sd2))] = row['overlap_vdw_radii'], row['integral_error_vdw_radii']
+                overlaps[(row['euclidean_distance'], (1.5, 1.5))] = row['overlap_1.5'], row['integral_error_1.5']
+
+            logger.info('modifying calculated overlap areas to emulate legacy behavior')
+            df[['overlap_vdw_radii', 'integral_error_vdw_radii']] = df.progress_apply(lambda row: pd.Series(overlaps[(row['euclidean_distance'], tuple(sorted([row['receptor_atom_radius'], row['ligand_atom_radius']])))]), axis=1)
+            df[['overlap_1.5', 'integral_error_1.5']] = df.progress_apply(lambda row: pd.Series(overlaps[(row['euclidean_distance'], (1.5, 1.5))]), axis=1)
 
     distance_df_to_csv(df, pdb_id, distance_filepath, compressed=compressed)

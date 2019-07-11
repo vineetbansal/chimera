@@ -3,8 +3,10 @@ import numpy as np
 from math import e, pi, sqrt
 from scipy.integrate import quad
 import gzip
+import io
 import logging
 from tqdm import tqdm
+import pandas as pd
 
 from prody import parsePDB
 from prody.atomic.hierview import HierView
@@ -43,20 +45,55 @@ ANNOTATION_COLUMNS = [
 ]
 
 
-def _format_integral(x):
-    s = f'{x:.7g}'
-    if s=='0.0001':
-        return '1e-04'
-    else:
-        return s
+def distance_df_to_csv(df, pdb_id, file_path, compressed=False):
 
+    def _format_integral(x):
+        s = f'{x:.7g}'
+        if s == '0.0001':
+            return '1e-04'
+        else:
+            return s
 
-def _format_error(x):
-    s = f'{x:.2g}'
-    if s=='0.0001':
-        return '1e-04'
-    else:
-        return s
+    def _format_error(x):
+        s = f'{x:.2g}'
+        if s == '0.0001':
+            return '1e-04'
+        else:
+            return s
+
+    _open = open
+    if compressed:
+        _open = gzip.open
+        if not file_path.endswith('.gz'):
+            file_path += '.gz'
+
+    f = _open(file_path, 'wb')
+    f.write(
+        ('\n'.join(['# All pairwise distances between receptor protein chain residue atoms ' +
+                    'and ligand atoms for ' + pdb_id,
+                    '# NOTE: columns 8-11 contain the overlap area between Gaussian ' +
+                    'distributions centered at each atom with ',
+                    '#   standard deviations set to either the van der Waals radii of ' +
+                    'the two atoms or to 1.5']) + '\n').encode('utf8'))
+    f.write(('\t'.join(['#pdbID-pdbChain', 'receptor_aa_1-index', 'receptor_aa_value',
+                        'receptor_atom_id', 'receptor_atom_value', 'ligand_id',
+                        'ligand_atom_value',
+                        'euclidean_distance',
+                        'overlap_vdw_radii', 'integral_error_vdw_radii',
+                        'overlap_1.5', 'integral_error_1.5',
+                        'full_receptor_sequence']) + '\n').encode('utf8'))
+
+    df = df.copy()
+    df['overlap_vdw_radii'] = df.apply(lambda row: _format_integral(row['overlap_vdw_radii']), axis=1)
+    df['integral_error_vdw_radii'] = df.apply(lambda row: _format_error(row['integral_error_vdw_radii']), axis=1)
+    df['overlap_1.5'] = df.apply(lambda row: _format_integral(row['overlap_1.5']), axis=1)
+    df['integral_error_1.5'] = df.apply(lambda row: _format_error(row['integral_error_1.5']), axis=1)
+
+    _f = io.StringIO()
+    df[['pdbID-pdbChain', 'receptor_aa_1-index', 'receptor_aa_value', 'receptor_atom_id', 'receptor_atom_value', 'ligand_id', 'ligand_atom_value', 'euclidean_distance', 'overlap_vdw_radii', 'integral_error_vdw_radii', 'overlap_1.5', 'integral_error_1.5', 'full_receptor_sequence']].to_csv(_f, sep='\t', header=False, index=False)
+    _f.seek(0)
+    f.write(_f.read().encode('utf8'))
+    f.close()
 
 
 def minf1f2(x, mu2, sd1, sd2):
@@ -81,28 +118,7 @@ def overlap_radii(dist, r1, r2):
 
 def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, ligand_filepaths, distance_filepath, include_backbone=False, distance_cutoff=20, compressed=True, calculate_overlap=True):
 
-    _open = open
-    if compressed:
-        _open = gzip.open
-        if not distance_filepath.endswith('.gz'):
-            distance_filepath += '.gz'
-
-    f = _open(distance_filepath, 'wb')
-    f.write(
-        ('\n'.join(['# All pairwise distances between receptor protein chain residue atoms ' +
-                    'and ligand atoms for ' + pdb_id,
-                    '# NOTE: columns 8-11 contain the overlap area between Gaussian ' +
-                    'distributions centered at each atom with ',
-                    '#   standard deviations set to either the van der Waals radii of ' +
-                    'the two atoms or to 1.5']) + '\n').encode('utf8'))
-    f.write(('\t'.join(['#pdbID-pdbChain', 'receptor_aa_1-index', 'receptor_aa_value',
-                        'receptor_atom_id', 'receptor_atom_value', 'ligand_id',
-                        'ligand_atom_value',
-                        'euclidean_distance',
-                        'overlap_vdw_radii', 'integral_error_vdw_radii',
-                        'overlap_1.5', 'integral_error_1.5',
-                        'full_receptor_sequence']) + '\n').encode('utf8'))
-
+    _rows = []
     previous_pdb_chain = None
     for pdb_chain, receptor_filepath, ligand_id, ligand_filepath in zip(pdb_chains, receptor_filepaths, ligand_ids, ligand_filepaths):
 
@@ -181,36 +197,31 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
                         _x, _y, _z, _e = t
                         dist = np.linalg.norm(np.array([_x, _y, _z]) - ligand_atom.getCoords())
                         if dist <= distance_cutoff:
-
-                            r1 = e1 = r2 = e2 = 'N/A'
-                            if calculate_overlap:
-                                _r1, _r2 = vdw_radius(_e), vdw_radius(ligand_element)
-                                r1, e1 = overlap_radii(dist, _r1, _r2)
-                                r2, e2 = overlap_radii(dist, 1.5, 1.5)
-
-                            f.write(('\t'.join([
-                                f'{pdb_id}{pdb_chain}',
-                                f'{i - start_index + 1}',
-                                f'{positions[i]}',
-                                f'{j}/{n}',
-                                f'{_e}',
-                                f'{ligand_id}{ligand_sub_type}',
-                                f'{ligand_element}',
-                                f'{dist}',
-                                _format_integral(r1),
-                                _format_error(e1),
-                                _format_integral(r2),
-                                _format_error(e2)
-                            ])).encode('utf8'))
+                            _row = {
+                                'pdbID-pdbChain': f'{pdb_id}{pdb_chain}',
+                                'receptor_aa_1-index': f'{i - start_index + 1}',
+                                'receptor_aa_value': f'{positions[i]}',
+                                'receptor_atom_id': f'{j}/{n}',
+                                'receptor_atom_value': f'{_e}',
+                                'ligand_id': f'{ligand_id}{ligand_sub_type}',
+                                'ligand_atom_value': f'{ligand_element}',
+                                'euclidean_distance': dist,
+                                'full_receptor_sequence': ''
+                            }
 
                             if previous_pdb_chain != pdb_chain:
-                                f.write(
-                                    ('\t' + ''.join([positions[aa_index] if aa_index in positions else 'X' for aa_index in range(start_index, max(positions.keys())+1)]) +
-                                     '\n').encode('utf8'))
-                                previous_pdb_chain = pdb_chain
-                            else:
-                                f.write(b'\t\n')
-                pbar.update(1)
+                               _row['full_receptor_sequence'] = ''.join([positions[aa_index] if aa_index in positions else 'X' for aa_index in range(start_index, max(positions.keys())+1)])
+                               previous_pdb_chain = pdb_chain
 
+                            _rows.append(_row)
+
+                pbar.update(1)
     pbar.close()
-    f.close()
+
+    df = pd.DataFrame(_rows)
+
+    if calculate_overlap:
+        df[['overlap_vdw_radii', 'integral_error_vdw_radii']] = df.apply(lambda row: pd.Series(overlap_radii(row['euclidean_distance'], vdw_radius(row['receptor_atom_value']), vdw_radius(row['ligand_atom_value']))), axis=1)
+        df[['overlap_1.5', 'integral_error_1.5']] = df.apply(lambda row: pd.Series(overlap_radii(row['euclidean_distance'], 1.5, 1.5)), axis=1)
+
+    distance_df_to_csv(df, pdb_id, distance_filepath, compressed=compressed)

@@ -5,7 +5,7 @@ import pandas as pd
 from chimera.distance import ANNOTATION_COLUMNS, create_distance_file
 
 ANNOTATION_FILE = '/media/vineetb/t5-vineetb/biolip/processed_data/annotations/current_annotations.txt'
-
+COMPRESS = True
 
 if __name__ == '__main__':
     receptor_dir = '/media/vineetb/t5-vineetb/biolip/downloaded_data/receptor/'
@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     pdb_ids = annot_df.pdb_id.unique().tolist()
     # TEMPORARY
-    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2lxp')]
+    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2lo3')]
 
     for pdb_id in pdb_ids:
         print(f'Processing PDB {pdb_id}')
@@ -37,10 +37,14 @@ if __name__ == '__main__':
                 include_backbone=False,
                 distance_cutoff=20,
                 calculate_overlap=True,
-                compressed=False
+                compressed=COMPRESS
             )
 
-            s = open('distance.txt', 'rb').read().decode('utf8')
+            if COMPRESS:
+                s = gzip.open('distance.txt.gz', 'rb').read().decode('utf8')
+            else:
+                s = open('distance.txt', 'rb').read().decode('utf8')
+
             s1 = gzip.open(os.path.join('/media/vineetb/t5-vineetb/biolip/processed_data/distances_overlap/', pdb_id[0], pdb_id[:2], f'{pdb_id}_distances.txt.gz'), 'rb').read().decode('utf8')
             if (s==s1):
                 print(pdb_id + ' GOOD')

@@ -148,9 +148,10 @@ def create_biolip_fasta_files(distance_file, fasta_file, current_pdb_id, distanc
   binding_residues = {}  # pdbID-pdbChain -> AA residue index -> [(atom ID, ligand_type, "distance")]
   rename_ligand_id = {}  # original ligand ID -> newly named ligand ID (in this case, unnecessary)
 
-  distance_handle = gzip.open(distance_file) if distance_file.endswith('gz') else open(distance_file)
+  distance_handle = gzip.open(distance_file, 'rb') if distance_file.endswith('gz') else open(distance_file, 'rb')
   receptor_sequence = ''
   for distline in distance_handle:
+    distline = distline.decode('utf8')
     if distline.startswith('#'):
       continue
 
@@ -195,13 +196,13 @@ def create_biolip_fasta_files(distance_file, fasta_file, current_pdb_id, distanc
   distance_handle.close()
 
   # create the fasta file as specified:
-  fasta_outhandle = gzip.open(fasta_file, 'w') if fasta_file.endswith('gz') else open(fasta_file, 'w')
+  fasta_outhandle = gzip.open(fasta_file, 'wb') if fasta_file.endswith('gz') else open(fasta_file, 'wb')
 
   for pdb_chain_id in sorted(receptor_chain_sequences.keys()):
     if pdb_chain_id not in binding_residues:
       continue
 
-    fasta_outhandle.write('>' + pdb_chain_id + ' bindingSiteRes=')
+    fasta_outhandle.write(('>' + pdb_chain_id + ' bindingSiteRes=').encode('utf8'))
 
     final_binding_residues = []
     for residue_aa_index, current_binding_residue in binding_residues[pdb_chain_id].items():
@@ -210,9 +211,9 @@ def create_biolip_fasta_files(distance_file, fasta_file, current_pdb_id, distanc
         current_residue_score = residue_binding_score(current_binding_residue, ligand_id, distance)
 
         final_binding_residues.append((residue_aa_index, ligand_id, current_residue_score))
-    fasta_outhandle.write(','.join([str(res_aa_index) + '-' + lig_id + '-' + str(final_score)
+    fasta_outhandle.write((','.join([str(res_aa_index) + '-' + lig_id + '-' + str(final_score)
                                     for (res_aa_index, lig_id, final_score) in sorted(final_binding_residues)]) +
-                          ';\n' + receptor_chain_sequences[pdb_chain_id] + '\n\n')
+                          ';\n' + receptor_chain_sequences[pdb_chain_id] + '\n\n').encode('utf8'))
   fasta_outhandle.close()
   sys.stderr.write('Wrote to ' + fasta_file + '\n')
 

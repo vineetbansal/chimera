@@ -1,10 +1,9 @@
 from collections import defaultdict
 import numpy as np
+from math import e, pi, sqrt
 from scipy.integrate import quad
-from scipy.stats import norm
 import gzip
 import logging
-from functools import lru_cache
 from tqdm import tqdm
 
 from prody import parsePDB
@@ -59,29 +58,21 @@ def _format_error(x):
     else:
         return s
 
-@lru_cache(maxsize=None)
-def normobj(mu, sd):
-    return norm(mu, sd)
+
+def minf1f2(x, mu2, sd1, sd2):
+    min_value = min(e**(-(x**2)/(2*sd1**2))/sd1, e**(-(x-mu2)**2/(2*sd2**2))/sd2)
+    return min_value/sqrt(2*pi)
 
 
-@lru_cache(maxsize=None)
-def minf1f2(x, mu1, mu2, sd1, sd2):
-    return min(normobj(mu1, sd1).pdf(x), normobj(mu2, sd2).pdf(x))
-
-
-@lru_cache(maxsize=None)
-def overlap_radii(dist, receptor_atom=None, ligand_atom=None, receptor_atom_vdw_radius=None,
-                  ligand_atom_vdw_radius=None):
-
+def overlap_radii(dist, r1, r2):
     return quad(
         func=minf1f2,
         a=-np.inf,
         b=np.inf,
         args=(
-            0,
             dist,
-            receptor_atom_vdw_radius or vdw_radius(receptor_atom),
-            ligand_atom_vdw_radius or vdw_radius(ligand_atom)
+            r1,
+            r2
         ),
         epsabs=tol,
         epsrel=tol
@@ -193,8 +184,9 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
 
                             r1 = e1 = r2 = e2 = 'N/A'
                             if calculate_overlap:
-                                r1, e1 = overlap_radii(dist=dist, receptor_atom=_e, ligand_atom=ligand_element)
-                                r2, e2 = overlap_radii(dist=dist, receptor_atom_vdw_radius=1.5, ligand_atom_vdw_radius=1.5)
+                                _r1, _r2 = vdw_radius(_e), vdw_radius(ligand_element)
+                                r1, e1 = overlap_radii(dist, _r1, _r2)
+                                r2, e2 = overlap_radii(dist, 1.5, 1.5)
 
                             f.write(('\t'.join([
                                 f'{pdb_id}{pdb_chain}',

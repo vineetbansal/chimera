@@ -23,7 +23,7 @@ IGNORE_INSERTION_CODE = True
 
 # TODO: Whether to 'cache' normal distribution overlap numbers, but in reverse order, emulating
 # behavior of old code
-EMULATE_CACHING_BUG = False
+EMULATE_CACHING_BUG = True
 
 ANNOTATION_COLUMNS = [
     'pdb_id',
@@ -203,7 +203,7 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
                         if dist <= distance_cutoff:
                             _row = {
                                 'pdbID-pdbChain': f'{pdb_id}{pdb_chain}',
-                                'receptor_aa_1-index': f'{i - start_index + 1}',
+                                'receptor_aa_1-index': i - start_index + 1,
                                 'receptor_aa_value': f'{positions[i]}',
                                 'receptor_atom_id': f'{j}/{n}',
                                 'receptor_atom_value': f'{_e}',
@@ -250,3 +250,59 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
             df[['overlap_1.5', 'integral_error_1.5']] = df.progress_apply(lambda row: pd.Series(overlaps[(row['euclidean_distance'], (1.5, 1.5))]), axis=1)
 
     distance_df_to_csv(df, pdb_id, distance_filepath, compressed=compressed)
+    df.to_csv('dfs/' + pdb_id + '_df.csv')
+    return df
+
+
+def create_fasta(df, filepath, compressed=True, distance='maxstd', distance_cutoff=20):
+
+    distances = {}  # pdbID-pdbChain => <sequence>, [(<residue_index>, <ligand_id>, <distance>), ..]
+
+    for pdb_chain, df1 in df.groupby(['pdbID-pdbChain']):
+
+        receptor_sequence = df1['full_receptor_sequence'].dropna().iloc[0]
+
+        if distance.endswith('std'):
+            df1 = df1[df1['integral_error_1.5'] < df1['overlap_1.5']]
+        elif distance.endswith('vdw'):
+            df1 = df1[df1['integral_error_vdw_radii'] < df1['overlap_vdw_radii']]
+
+        ligand_distances = []
+        for residue_index, df2 in df1.groupby(['receptor_aa_1-index']):
+
+            unique_receptor_positions = df2['receptor_atom_id'].unique()
+            n_unique_receptor_positions = len(unique_receptor_positions)
+
+            for ligand_id, df3 in df2.groupby(['ligand_id']):
+
+                if distance=='maxstd':
+                    d = df3.groupby('receptor_atom_id').sum()['overlap_1.5'].max()
+                elif distance=='maxvdw':
+                    d = df3.groupby('receptor_atom_id').sum()['overlap_vdw_radii'].max()
+                elif distance=='meanstd':
+                    d = df3['overlap_1.5'].sum() / n_unique_receptor_positions
+                elif distance=='meanvdw':
+                    d = df3['overlap_vdw_radii'].sum() / n_unique_receptor_positions
+                elif distance=='sumstd':
+                    d = df3['overlap_1.5'].sum()
+                elif distance=='sumvdw':
+                    d = df3['overlap_vdw_radii'].sum()
+                elif distance=='mindist':
+                    d = df3['euclidean_distance'].min()
+                elif distance=='meandist':
+                    d = df3.groupby('receptor_atom_id')['euclidean_distance'].min()
+                    d = d.reindex(unique_receptor_positions, fill_value=distance_cutoff).mean()
+                elif distance=='fracin4':
+                    n_aa_atoms = int(df3.iloc[0]['receptor_atom_id'].split('/')[-1])
+                    n_aa_atoms_near = (df3.groupby('receptor_atom_id')['euclidean_distance'].min() < 4).sum()
+                    d = n_aa_atoms_near/n_aa_atoms
+
+                ligand_distances.append((residue_index, ligand_id, d))
+
+        distances[pdb_chain] = receptor_sequence, sorted(ligand_distances)
+
+    with open(filepath, 'w') as f:
+        for chain, (seq, ligand_distances) in distances.items():
+            f.write(f'>{chain} bindingSiteRes=')
+            f.write(','.join([f'{pos}-{lig}-{d:.5f}' for pos, lig, d in ligand_distances]))
+            f.write(f';\n{seq}\n\n')

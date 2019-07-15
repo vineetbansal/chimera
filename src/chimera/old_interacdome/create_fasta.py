@@ -62,7 +62,7 @@ def receptor_ligand_distance(euc_dist, vdw_dist, vdw_error, std_dist, std_error,
       current_distance = 'N/A'
 
   # Overlap area (integrated) between two normal distributions with vdw interaction radii as standard deviation
-  elif distance in ['maxvdw', 'maxstd', 'sumvdw']:
+  elif distance in ['maxvdw', 'meanvdw', 'sumvdw']:
     if vdw_dist and vdw_dist != 'N/A' and vdw_error and float(vdw_error) < float(vdw_dist):
       current_distance = float(vdw_dist)
     else:

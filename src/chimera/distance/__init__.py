@@ -250,7 +250,6 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
             df[['overlap_1.5', 'integral_error_1.5']] = df.progress_apply(lambda row: pd.Series(overlaps[(row['euclidean_distance'], (1.5, 1.5))]), axis=1)
 
     distance_df_to_csv(df, pdb_id, distance_filepath, compressed=compressed)
-    df.to_csv('dfs/' + pdb_id + '_df.csv')
     return df
 
 

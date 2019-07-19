@@ -4,6 +4,7 @@ channels:
   - defaults
 
 dependencies:
+  - biopython
   - Flask>=1.0
   - Jinja2>=2.10.1
   - MarkupSafe
@@ -15,5 +16,6 @@ dependencies:
   - tqdm
   - pip:
     - coveralls
+    - prody
     - pytest-cov
     - weblogo

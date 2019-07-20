@@ -65,8 +65,9 @@ def consistent_domain_ligand_pairs(required_overall_precision=0.5,
 
   # Keep track of xs (binding propensities) and ys (precisions achieved) for each ligand type
   for cv_file in accuracy_files:
-    cv_handle = gzip.open(cv_file) if cv_file.endswith('gz') else open(cv_file)
+    cv_handle = gzip.open(cv_file, 'rb') if cv_file.endswith('gz') else open(cv_file, 'rb')
     for cv_line in cv_handle:
+      cv_line = cv_line.decode('utf8')
       if cv_line.startswith('#') or len(cv_line[:-1].split('\t')) < 16:
         continue
 
@@ -197,8 +198,9 @@ def save_consistent_domain_ligand_pairs(required_overall_precision=0.5,
                            if a.endswith('-pt-' + distance + '.txt.gz')])
 
   for cv_file in accuracy_files:
-    cv_handle = gzip.open(cv_file) if cv_file.endswith('gz') else open(cv_file)
+    cv_handle = gzip.open(cv_file, 'rb') if cv_file.endswith('gz') else open(cv_file, 'rb')
     for cv_line in cv_handle:
+      cv_line = cv_line.decode('utf8')
       if cv_line.startswith('#') or len(cv_line[:-1].split('\t')) < 13:
         continue
 
@@ -220,8 +222,8 @@ def save_consistent_domain_ligand_pairs(required_overall_precision=0.5,
     cv_handle.close()
 
   # write out the list of BINDING PROPENSITIES that pass:
-  out_handle = gzip.open(wts_outfile, 'w') if wts_outfile.endswith('gz') else open(wts_outfile, 'w')
-  out_handle.write('\n'.join(['# All binding frequencies that resulted in a (ungrouped) cross-validated precision >= '+
+  out_handle = gzip.open(wts_outfile, 'wb') if wts_outfile.endswith('gz') else open(wts_outfile, 'wb')
+  out_handle.write(('\n'.join(['# All binding frequencies that resulted in a (ungrouped) cross-validated precision >= '+
                               str(minimum_passing_threshold) + ' are retained from ',
                               '# ' + "{:,}".format(len(passing_domains)) + ' domain-ligand type pairs from ' +
                               "{:,}".format(len(set([a[0] for a in passing_domains]))) + ' domains',
@@ -234,7 +236,7 @@ def save_consistent_domain_ligand_pairs(required_overall_precision=0.5,
                               '# of the domain in complex with the corresponding ligand in BioLiP',
                               '# Full list of passing domains found in ' + dom_outfile,
                               '# All (unfiltered) binding frequencies found in ' + SCORE_PATH + distance + '/',
-                              '\t'.join(['#domain_name', 'ligand_type', 'match_state', 'binding_frequency'])]) + '\n')
+                              '\t'.join(['#domain_name', 'ligand_type', 'match_state', 'binding_frequency'])]) + '\n').encode('utf8'))
 
   binding_files = sorted([SCORE_PATH + distance + '/' + a for a in os.listdir(SCORE_PATH + distance)
                           if a.endswith('_binding-scores_' + distance + '.txt.gz')])
@@ -242,8 +244,9 @@ def save_consistent_domain_ligand_pairs(required_overall_precision=0.5,
   for bind_file in binding_files:
     domain_name = bind_file.split('/')[-1].replace('_binding-scores_' + distance + '.txt.gz', '')
 
-    binding_file_handle = gzip.open(bind_file) if bind_file.endswith('gz') else open(bind_file)
+    binding_file_handle = gzip.open(bind_file, 'rb') if bind_file.endswith('gz') else open(bind_file, 'rb')
     for bind_info in binding_file_handle:
+      bind_info = bind_info.decode('utf8')
       if bind_info.startswith('#'):
         continue
 
@@ -251,7 +254,7 @@ def save_consistent_domain_ligand_pairs(required_overall_precision=0.5,
 
       if (domain_name, ligand_type) in passing_domain_ligand_pairs and \
               float(binding_propensity) >= passing_domain_ligand_pairs[(domain_name, ligand_type)]:
-        out_handle.write('\t'.join([domain_name, ligand_type, match_state, binding_propensity]) + '\n')
+        out_handle.write(('\t'.join([domain_name, ligand_type, match_state, binding_propensity]) + '\n').encode('utf8'))
     binding_file_handle.close()
 
   out_handle.close()
@@ -313,8 +316,9 @@ def datasource_website_input(outfile, pfam_path, distance='mindist', for_webserv
 
     # --------------------------------------------------------------------------------------------------
     # get the corresponding PDB structure IDs and binding propensities:
-    bp_handle = gzip.open(bp_file) if bp_file.endswith('gz') else open(bp_file)
+    bp_handle = gzip.open(bp_file, 'rb') if bp_file.endswith('gz') else open(bp_file, 'rb')
     for bp_line in bp_handle:
+      bp_line = bp_line.decode('utf8')
       if bp_line.startswith('#'):
         continue
 
@@ -339,8 +343,9 @@ def datasource_website_input(outfile, pfam_path, distance='mindist', for_webserv
     # --------------------------------------------------------------------------------------------------
     # finally, get the accuracies for this domain's interactions
     cv_file = CV_PATH + distance + '/precision_threshold/' + domain_name + '-pt-' + distance + '.txt.gz'
-    cv_handle = gzip.open(cv_file) if cv_file.endswith('gz') else open(cv_file)
+    cv_handle = gzip.open(cv_file, 'rb') if cv_file.endswith('gz') else open(cv_file, 'rb')
     for cv_line in cv_handle:
+      cv_line = cv_line.decode('utf8')
       if cv_line.startswith('#') or len(cv_line[:-1].split('\t')) < 16:
         continue
 
@@ -375,7 +380,7 @@ def datasource_website_input(outfile, pfam_path, distance='mindist', for_webserv
     # --------------------------------------------------------------------------------------------------
     # write results to specified output file
     for ligand_type, score_set in scores.items():
-      binding_frequencies = [str(score_set.get(str(mstate), 0)) for mstate in xrange(1, int(domain_length) + 1)]
+      binding_frequencies = [str(score_set.get(str(mstate), 0)) for mstate in range(1, int(domain_length) + 1)]
       if set(binding_frequencies) == {'0'}:
         continue
 
@@ -426,25 +431,25 @@ def datasource_website_hmms(pfam_hmm_infile, gglogo_hmm_outfile):
     elif hmm_line.startswith('HMM '):
       aas = hmm_line.strip().split()[1:]
       match_state_starts = True
-      for _ in xrange(4):
-        hmm_handle.next()  # skip the rest
+      for _ in range(4):
+        next(hmm_handle) # skip the rest
 
     elif match_state_starts:
       mstate = hmm_line.strip().split()[0]
       try:
-        if int(mstate) not in xrange(1, domain_length + 1):
+        if int(mstate) not in range(1, domain_length + 1):
           break
       except ValueError:
         break
-      match_states[mstate] = {aas[i]: math.exp(-1 * float(hmm_line.strip().split()[i + 1])) for i in xrange(len(aas))}
-      for _ in xrange(2):
-        hmm_handle.next()
+      match_states[mstate] = {aas[i]: math.exp(-1 * float(hmm_line.strip().split()[i + 1])) for i in range(len(aas))}
+      for _ in range(2):
+        next(hmm_handle)
   hmm_handle.close()
 
   out_handle = open(gglogo_hmm_outfile, 'w')
   for aa in aas:
     out_handle.write(
-      '\t'.join([aa] + [str(match_states[m][aa]) for m in map(str, xrange(1, domain_length + 1))]) + '\n')
+      '\t'.join([aa] + [str(match_states[m][aa]) for m in map(str, range(1, domain_length + 1))]) + '\n')
   out_handle.close()
   # sys.stderr.write('Converted '+pfam_hmm_infile+' to '+gglogo_hmm_outfile+'\n')
 

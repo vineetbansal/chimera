@@ -230,7 +230,7 @@ def create_hmmer_fasta_file(annotation_dir=DATAPATH+'downloaded_data/annotations
   """
 
   # first, get the date of the last downloaded annotation file:
-  year, month, day = sorted([map(int, fname[fname.find('BioLiP_')+7:fname.rfind('.txt')].split('-'))
+  year, month, day = sorted([list(map(int, fname[fname.find('BioLiP_')+7:fname.rfind('.txt')].split('-')))
                              for fname in os.listdir(annotation_dir)
                              if fname.startswith('BioLiP_') and fname.endswith('.txt')])[-1]
   latest_date = str(year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)

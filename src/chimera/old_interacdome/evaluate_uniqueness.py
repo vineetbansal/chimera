@@ -245,10 +245,11 @@ def create_alignment_files(domain_file, fasta_dir, alignment_dir, distance='mind
   domain_file_size = line_count_from_file(domain_file)
   progress_bars = [(str(rank*10)+'%', int(rank*(domain_file_size/10.))) for rank in range(1, 10)][::-1]
 
-  domain_handle = gzip.open(domain_file) if domain_file.endswith('gz') else open(domain_file)
+  domain_handle = gzip.open(domain_file, 'rb') if domain_file.endswith('gz') else open(domain_file, 'rb')
 
   process_index = 0
   for dom_line in domain_handle:
+    dom_line = dom_line.decode('utf8')
     if dom_line.startswith('#'):
       continue
 
@@ -274,8 +275,9 @@ def create_alignment_files(domain_file, fasta_dir, alignment_dir, distance='mind
     # find the header that corresponds to our sequence of interest
     fasta_handle = gzip.open(current_fasta_file) if current_fasta_file.endswith('gz') else open(current_fasta_file)
     for fasta_line in fasta_handle:
+      fasta_line = fasta_line.decode('utf8')
       if fasta_line.startswith('>' + pdb_id_chain):
-        binding_positions = [entry.split('-') for entry in
+        binding_positions = [entry.split('-', maxsplit=2) for entry in
                              fasta_line[fasta_line.find('bindingSiteRes=') + 15:fasta_line.rfind(';')].split(',')]
 
         # restrict to those binding positions that occur within the domain of interest with reasonable binding scores
@@ -398,12 +400,12 @@ def henikoff_alignment_score(seqid_to_sequence):
   seq_ids = sorted(new_seqid_to_sequence.keys())  # identifiers must be in the same order in each column
   sums_across_columns = [0.] * len(seq_ids)  # sum of per-column, per-sequence uniqueness scores
 
-  for col_ind in xrange(len(new_seqid_to_sequence[seq_ids[0]])):
+  for col_ind in range(len(new_seqid_to_sequence[seq_ids[0]])):
     current_column = [new_seqid_to_sequence[curr_seq_id][col_ind] for curr_seq_id in seq_ids]
     column_scores = henikoff_column_score(current_column)
 
     # update the running totals for each sequence's "uniqueness"
-    for seq_ind in xrange(len(seq_ids)):
+    for seq_ind in range(len(seq_ids)):
       sums_across_columns[seq_ind] += column_scores[seq_ind]
 
   return seq_ids, sums_across_columns
@@ -420,7 +422,7 @@ def remove_gapped_columns(seqid_to_sequence):
   """
 
   # check to see if there are any gapped columns
-  gapped_columns = [index for index in xrange(len(seqid_to_sequence.values()[0]))
+  gapped_columns = [index for index in range(len(list(seqid_to_sequence.values())[0]))
                     if set([sequence[index] for sequence in seqid_to_sequence.values()]) == {'-'}]
 
   if len(gapped_columns) < 1:
@@ -429,7 +431,7 @@ def remove_gapped_columns(seqid_to_sequence):
   # if there are, create new sequences excluding the fully-gapped columns
   seqid_to_ungapped_sequence = {sequence_id: [] for sequence_id in seqid_to_sequence.keys()}
 
-  for index in xrange(len(seqid_to_sequence.values()[0])):
+  for index in range(len(list(seqid_to_sequence.values())[0])):
     if index in gapped_columns:
       continue
 
@@ -465,6 +467,7 @@ def find_closest_chain(pdb_id, pdb_chains, domain_location, ligand_type, distanc
   chain_proximity = {}
   distance_handle = gzip.open(distance_fasta) if distance_fasta.endswith('gz') else open(distance_fasta)
   for dist_line in distance_handle:
+    dist_line = dist_line.decode('utf8')
     if dist_line.startswith('>'+pdb_id):
       current_chain = dist_line[len('>' + pdb_id):len('>' + pdb_id) + 1]
       if current_chain not in pdb_chains:
@@ -642,14 +645,14 @@ def generate_uniqueness_scores(domain_names, ligand_types, alignment_files, outp
     sys.stderr.write('Could not open '+output_file+' to write to. Exiting.\n')
     sys.exit(1)
 
-  output_handle = gzip.open(output_file, 'w') if output_file.endswith('gz') else open(output_file, 'w')
-  output_handle.write('\n'.join(['# Per domain sequence "uniqueness" scores for ' +
+  output_handle = gzip.open(output_file, 'wb') if output_file.endswith('gz') else open(output_file, 'wb')
+  output_handle.write(('\n'.join(['# Per domain sequence "uniqueness" scores for ' +
                                  "{:,}".format(len(set(domain_names))) + ' distinct domains contacting ' +
                                  "{:,}".format(len(set(ligand_types))) + ' distinct ligands, calculated as in',
                                  '# Henikoff S and Henikoff JG (1994). "Position-based sequence weights." ' +
-                                 'J Mol Biol 243(4): 574-578. doi:10.1016/0022-2836(94)90032-9'])+'\n')
-  output_handle.write('\t'.join(['#domain_name', 'ligand_binding_type', 'number_of_instances',
-                                 'pdbID-pdbChain_domain-start_domain-end : relative_uniqueness, ...'])+'\n')
+                                 'J Mol Biol 243(4): 574-578. doi:10.1016/0022-2836(94)90032-9'])+'\n').encode('utf8'))
+  output_handle.write(('\t'.join(['#domain_name', 'ligand_binding_type', 'number_of_instances',
+                                 'pdbID-pdbChain_domain-start_domain-end : relative_uniqueness, ...'])+'\n').encode('utf8'))
 
   progress_bars = [(str(rank * 10) + '%', int(rank * (len(alignment_files) / 10.))) for rank in range(1, 10)][::-1]
 
@@ -679,11 +682,11 @@ def generate_uniqueness_scores(domain_names, ligand_types, alignment_files, outp
                                             str(ligand_types[curr_ind]),  # ligand type
                                             str(len(ordered_seqids)),  # number of instances
                                             ','.join(str(ordered_seqids[curr_id])+':'+str(relative_scores[curr_id])
-                                                     for curr_id in xrange(len(ordered_seqids)))])+'\n')
+                                                     for curr_id in range(len(ordered_seqids)))])+'\n')
 
   all_uniqueness_scores.sort()
   for unique_line in all_uniqueness_scores:
-    output_handle.write(unique_line)
+    output_handle.write(unique_line.encode('utf8'))
   output_handle.close()
   sys.stderr.write('Done!\nSuccessfully wrote relative uniqueness scores to '+output_file+'\n')
 

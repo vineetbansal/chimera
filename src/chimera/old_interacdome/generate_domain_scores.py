@@ -45,7 +45,7 @@ def check_and_renormalize_distribution(distribution):
 
   if not abs(1. - sum([weight for (_, weight) in distribution])) < 1e-6:
     normalized_weights = normalize_scores([weight for (_, weight) in distribution])
-    return [(distribution[i][0], normalized_weights[i]) for i in xrange(len(distribution))]
+    return [(distribution[i][0], normalized_weights[i]) for i in range(len(distribution))]
 
   return distribution  # if the original weights were fine, return the original distribution
 
@@ -137,6 +137,7 @@ def process_uniqueness_file(uniqueness_file):
 
   uniqueness_handle = gzip.open(uniqueness_file) if uniqueness_file.endswith('gz') else open(uniqueness_file)
   for weight_line in uniqueness_handle:
+    weight_line = weight_line.decode('utf8')
     if weight_line.startswith('#'):
       continue
 
@@ -171,8 +172,9 @@ def process_fasta_file(fasta_file, pdbid_pdbchain_subset, ligand_to_group, bindi
   :return: None, but update the input binding_positions data structure
   """
 
-  fasta_handle = gzip.open(fasta_file) if fasta_file.endswith('gz') else open(fasta_file)
+  fasta_handle = gzip.open(fasta_file, 'rb') if fasta_file.endswith('gz') else open(fasta_file, 'rb')
   for fasta_line in fasta_handle:
+    fasta_line = fasta_line.decode('utf8')
     if fasta_line.startswith('>'):
       # format of these entries is pdbID-pdbChain bindingSiteRes=1-index AA position : ligand_type : score,...;
       pdbid_pdbchain = fasta_line[1:-1].split()[0]
@@ -314,12 +316,12 @@ def create_binding_scores(uniqueness_file, fasta_dir, alignment_dir, binding_sco
 
     # store per-position, per ligand-binding type binding scores to an outfile:
     out_file = binding_score_dir + domain_name + '_binding-scores_' + distance + '.txt.gz'
-    out_handle = gzip.open(out_file, 'w') if out_file.endswith('gz') else open(out_file, 'w')
-    out_handle.write('# Continuous positional weights, calculated according to the '+distance+' statistic,' +
-                     ' for '+domain_name+'\n')
-    out_handle.write('\t'.join(['#ligand_type', 'match_state', column_name,
+    out_handle = gzip.open(out_file, 'wb') if out_file.endswith('gz') else open(out_file, 'wb')
+    out_handle.write(('# Continuous positional weights, calculated according to the '+distance+' statistic,' +
+                     ' for '+domain_name+'\n').encode('utf8'))
+    out_handle.write(('\t'.join(['#ligand_type', 'match_state', column_name,
                                 'distribution (pdbID-pdbChain_start_end : relative uniqueness weight : ' +
-                                'positional score),...'])+'\n')
+                                'positional score),...'])+'\n').encode('utf8'))
 
     # for each type of ligand-binding in this domain, obtain overall binding score distributions for each match state
     for ligand_type, seqid_to_uniqueness in uniqueness[domain_name].items():
@@ -344,12 +346,12 @@ def create_binding_scores(uniqueness_file, fasta_dir, alignment_dir, binding_sco
         if flattened_score > 0.:
 
           # write out the ligand type, match state, positional score, and complete distribution (worth recording)
-          out_handle.write('\t'.join([ligand_type, str(matchstate), str(flattened_score),
+          out_handle.write(('\t'.join([ligand_type, str(matchstate), str(flattened_score),
                                       ','.join([seqid+':'+str(rel_wt)+':'+str(value) for
                                                 seqid, (value, rel_wt) in sorted(distribution.items())
                                                 if rel_wt > 0. and
                                                 ((distance in ['mindist', 'meandist'] and value < DISTANCE_CUTOFF) or
-                                                 (distance not in ['mindist', 'meandist'] and value > 0.))])])+'\n')
+                                                 (distance not in ['mindist', 'meandist'] and value > 0.))])])+'\n').encode('utf8'))
     out_handle.close()
     total_processed_domains += 1
 

@@ -1,10 +1,12 @@
+import io
 import os
 import gzip
 import pandas as pd
 
-from chimera.distance import ANNOTATION_COLUMNS, create_distance_file
+from chimera.distance import ANNOTATION_COLUMNS, create_distance_file, create_fasta
 
 ANNOTATION_FILE = '/media/vineetb/t5-vineetb/biolip/processed_data/annotations/current_annotations.txt'
+COMPRESS = False
 
 
 if __name__ == '__main__':
@@ -15,10 +17,9 @@ if __name__ == '__main__':
 
     pdb_ids = annot_df.pdb_id.unique().tolist()
     # TEMPORARY
-    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2lxp')]
+    pdb_ids = [pdb_id for pdb_id in pdb_ids if pdb_id.startswith('2l')]
 
     for pdb_id in pdb_ids:
-        print(f'Processing PDB {pdb_id}')
         df = annot_df[annot_df.pdb_id == pdb_id]
 
         pdb_chains = df.pdb_chain.tolist()
@@ -26,8 +27,15 @@ if __name__ == '__main__':
         ligand_chains = df.ligand_chain.tolist()
         ligand_snos = df.ligand_serial_number.tolist()
 
-        try:
-            create_distance_file(
+        if True:
+            s = gzip.open(f'/media/vineetb/t5-vineetb/biolip/processed_data/distances_overlap/2/2l/{pdb_id}_distances.txt.gz', 'rb').read().decode('utf8')
+            colnames = s.split('\n')[3][1:].split('\t')
+            f = io.StringIO(s)
+            f.seek(0)
+            df = pd.read_csv(f, header=None, skiprows=4, sep='\t', names=colnames)
+            f.close()
+        else:
+            df = create_distance_file(
                 pdb_id=pdb_id,
                 pdb_chains=pdb_chains,
                 receptor_filepaths=[os.path.join(receptor_dir, f'{pdb_id}{pdb_chain}.pdb') for pdb_chain in pdb_chains],
@@ -37,14 +45,25 @@ if __name__ == '__main__':
                 include_backbone=False,
                 distance_cutoff=20,
                 calculate_overlap=True,
-                compressed=False
+                compressed=COMPRESS
             )
 
-            s = open('distance.txt', 'rb').read().decode('utf8')
-            s1 = gzip.open(os.path.join('/media/vineetb/t5-vineetb/biolip/processed_data/distances_overlap/', pdb_id[0], pdb_id[:2], f'{pdb_id}_distances.txt.gz'), 'rb').read().decode('utf8')
-            if (s==s1):
-                print(pdb_id + ' GOOD')
+        for DISTANCE in ('mindist', 'fracin4', 'meandist', 'maxstd', 'meanstd', 'sumstd', 'maxvdw', 'meanvdw', 'sumvdw'):
+            create_fasta(df, 'distance.fa', compressed=COMPRESS, distance=DISTANCE)
+            if COMPRESS:
+                s = gzip.open('distance.fa.gz', 'rb').read().decode('utf8')
             else:
-                print(pdb_id + ' BAD')
-        except AssertionError as e:
-            print(pdb_id + ' BAD ' + str(e))
+                s = open('distance.fa', 'rb').read().decode('utf8')
+
+            s2 = gzip.open(
+                os.path.join('/media/vineetb/t5-vineetb/biolip/processed_data/fasta/', pdb_id[0],
+                             pdb_id[:2], f'{pdb_id}_{DISTANCE}.fa.gz'), 'rb').read().decode('utf8')
+            if s == s2:
+                print(pdb_id + ' ' + DISTANCE + ' GOOD')
+            else:
+                with open(f'{pdb_id}_{DISTANCE}_original.txt', 'w') as f:
+                    f.write(s2)
+                with open(f'{pdb_id}_{DISTANCE}_new.txt', 'w') as f:
+                    f.write(s)
+
+                print(pdb_id + ' ' + DISTANCE + ' BAD')

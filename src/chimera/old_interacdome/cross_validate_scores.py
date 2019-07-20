@@ -31,6 +31,7 @@ from generate_domain_scores import PROXIMITY_CUTOFF, choose_summary_function
 # path to where this script is currently located (and to where all data should be stored) -- this can
 # be updated
 DATAPATH = os.path.dirname(os.path.abspath(__file__))+'/'
+DATAPATH = '/media/vineetb/t5-vineetb/biolip/'
 
 # full path to where alignments (created using evaluate_uniqueness.py --create_alignments) can be found
 ALN_PATH = DATAPATH+'processed_data/domains/alignments/'
@@ -133,8 +134,9 @@ def process_domain_distances(score_file, ligand_type, default_value):
 
   matchstate_to_value = {}  # match state -> sequence ID -> "distance" value
 
-  score_handle = gzip.open(score_file) if score_file.endswith('gz') else open(score_file)
+  score_handle = gzip.open(score_file, 'rb') if score_file.endswith('gz') else open(score_file, 'rb')
   for score_line in score_handle:
+    score_line = score_line.decode('utf8')
     if score_line.startswith('#'):
       continue
 
@@ -167,8 +169,9 @@ def domain_ligand_types(score_file):
 
   ligand_types = set()
 
-  score_handle = gzip.open(score_file) if score_file.endswith('gz') else open(score_file)
+  score_handle = gzip.open(score_file, 'rb') if score_file.endswith('gz') else open(score_file, 'rb')
   for score_line in score_handle:
+    score_line = score_line.decode('utf8')
     if score_line.startswith('#'):
       continue
     ligand_types.add(score_line[:-1].split('\t')[0])
@@ -233,7 +236,7 @@ def percent_identity(seq1, seq2):
     sys.stderr.write('Length of seq1 != length of seq2!\n')
     return 0.
 
-  return sum([1. if seq1[i] == seq2[i] else 0. for i in xrange(len(seq1))]) / len(seq1)
+  return sum([1. if seq1[i] == seq2[i] else 0. for i in range(len(seq1))]) / len(seq1)
 
 
 ########################################################################################################
@@ -287,7 +290,7 @@ def create_shared_sequence_folds(seqid_to_sequence=None, num_folds=10, sequence_
 
   # group the domain instances into "shared sequence" groups with >90% identity
   shared_sequence_groups = create_shared_sequence_groups(seqid_to_sequence, sequence_identity_cutoff)
-  all_sequence_groups = range(len(shared_sequence_groups))  # assign a "key" per group corresponding to an int
+  all_sequence_groups = list(range(len(shared_sequence_groups)))  # assign a "key" per group corresponding to an int
 
   # include the set of sequence IDs that did not fall into one of the shared sequence groups:
   grouped_structures = set()  # all the structure IDs that fell into a group
@@ -338,7 +341,7 @@ def create_folds_from_sequences(seqid_to_sequence=None, num_folds=10, sequence_i
    total_unique_sequences) = create_shared_sequence_folds(seqid_to_sequence, num_folds, sequence_identity_cutoff)
 
   # now, split all sequences, regardless of sequence identity, into folds, too:
-  sequence_folds = np.array_split(np.random.permutation(seqid_to_sequence.keys()),
+  sequence_folds = np.array_split(np.random.permutation(list(seqid_to_sequence.keys())),
                                   min(len(seqid_to_sequence.keys()), num_folds))
   final_folds = []
   for current_fold in sequence_folds:
@@ -399,7 +402,7 @@ def macro_average_curve(xs, ys, curve_type='pr', print_errors=False):
   # edit pairwise points so that there is only one y-value per x-value and the start/end positions
   # are appropriate for interpolation
   for sequence_id in xs.keys():
-    current_points = zip(xs[sequence_id], ys[sequence_id])
+    current_points = list(zip(xs[sequence_id], ys[sequence_id]))
 
     xvals, yvals = [], []  # declare empty lists to be padded on either end as necessary afterward
 
@@ -472,7 +475,7 @@ def piecewise(x, xvals, yvals):
   elif x > xvals[-1]:
     return -1 if yvals[-1] < 1 else yvals[-1]
   else:
-    for i in xrange(len(xvals)-1):
+    for i in range(len(xvals)-1):
       if xvals[i] < x <= xvals[i+1]:
         return yvals[i]
 
@@ -765,7 +768,7 @@ def consistency_by_splits(domain_name, num_splits=2, sequence_identity_cutoff=1.
         consistency = '--'
       else:
         consistency = []
-        for _ in xrange(10):  # 10 random splits of the "shared sequence" groups
+        for _ in range(10):  # 10 random splits of the "shared sequence" groups
           folds = np.array_split(np.random.permutation(range(len(domain_instance_folds))), num_splits)
           average_distances = []
           for half in folds:
@@ -775,10 +778,10 @@ def consistency_by_splits(domain_name, num_splits=2, sequence_identity_cutoff=1.
                 half_seq_ids.add(seq_id)
             average_distances.append([arithmetic_mean([distance_vectors[seq_id][position]
                                                        for seq_id in half_seq_ids])
-                                      for position in xrange(total_match_states)])
+                                      for position in range(total_match_states)])
 
-          for split_index in xrange(num_splits-1):
-            for next_split_index in xrange(split_index+1, num_splits):
+          for split_index in range(num_splits-1):
+            for next_split_index in range(split_index+1, num_splits):
               pcc, _ = ss.pearsonr(average_distances[split_index], average_distances[next_split_index])
               consistency.append(pcc)
         consistencies = ','.join(map(str, consistency))
@@ -845,7 +848,7 @@ def accuracy_by_cross_validation(domain_name, num_folds=10, sequence_identity_cu
       if True in binding_values and False in binding_values:
         average_fraction_positives.append(binding_values.count(True) / float(len(binding_values)))
 
-    total_match_states = len(distance_vectors.values()[0])  # we don't need the actual match state names
+    total_match_states = len(list(distance_vectors.values())[0])  # we don't need the actual match state names
 
     # group the domain instances into "shared sequence" groups with > specified sequence identity,
     # then return folds containing sequence IDs (ordered list of non-empty sets)
@@ -903,7 +906,7 @@ def accuracy_by_cross_validation(domain_name, num_folds=10, sequence_identity_cu
 
         # for each match state, get the "training" binding potential score
         training_values = []
-        for match_state in xrange(total_match_states):
+        for match_state in range(total_match_states):
           current_distribution = [(distance_vectors[sequence_id][match_state],
                                    relative_uniqueness[seq_index]) for seq_index, sequence_id in
                                   enumerate(sorted_seq_ids) if sequence_id in distance_vectors]
@@ -940,11 +943,11 @@ def accuracy_by_cross_validation(domain_name, num_folds=10, sequence_identity_cu
           training_vector = [training_values]*concatenation_count
 
         # randomize the training vectors 10x
-        for hold_out_index in xrange(len(test_vector)):
+        for hold_out_index in range(len(test_vector)):
           randomize_count = 10
           random_test_vector = randomize_count * test_vector[hold_out_index]  # repetitions of the true test labels
           random_training_vector = []  # back-to-back concatenations of randomized binding potential weights
-          for _ in xrange(randomize_count):  # randomize 10 times!
+          for _ in range(randomize_count):  # randomize 10 times!
             random_training_vector.append(list(np.random.permutation(training_vector[hold_out_index])))
           random_training_vector = unravel_list(random_training_vector)
 
@@ -1087,7 +1090,7 @@ def bootstrapped_stderr(domain_name, sequence_identity_cutoff=0.9, distance='min
 
     # for each match state, get the "training" binding propensity
     current_scores = []
-    for match_state in xrange(total_match_states):
+    for match_state in range(total_match_states):
       current_distribution = [(distance_vectors[sequence_id][match_state],
                                relative_uniqueness[seq_index]) for seq_index, sequence_id in
                               enumerate(sorted_seq_ids) if sequence_id in distance_vectors]
@@ -1105,7 +1108,7 @@ def bootstrapped_stderr(domain_name, sequence_identity_cutoff=0.9, distance='min
         confidence_intervals = '--'
       else:
         bootstrapped_values = []
-        for _ in xrange(1000):  # 1000 bootstraps
+        for _ in range(1000):  # 1000 bootstraps
           current_grp_ids = np.random.choice(len(domain_instance_folds), len(domain_instance_folds), replace=True)
           current_seqs = []
           for grp_id in current_grp_ids:
@@ -1114,11 +1117,11 @@ def bootstrapped_stderr(domain_name, sequence_identity_cutoff=0.9, distance='min
           # get the "uniqueness" for each domain sequence in the bootstrapped set
           (sorted_seq_ids,
            relative_uniqueness) = henikoff_alignment_score({'seq'+str(i)+'_'+current_seqs[i][0]: current_seqs[i][1]
-                                                            for i in xrange(len(current_seqs))})
+                                                            for i in range(len(current_seqs))})
 
           # for each match state, get the "training" binding propensity
           current_scores = []
-          for match_state in xrange(total_match_states):
+          for match_state in range(total_match_states):
             current_distribution = [(distance_vectors[sequence_id[sequence_id.find('_')+1:]][match_state],
                                      relative_uniqueness[seq_index]) for seq_index, sequence_id in
                                     enumerate(sorted_seq_ids)
@@ -1129,7 +1132,7 @@ def bootstrapped_stderr(domain_name, sequence_identity_cutoff=0.9, distance='min
 
         # the standard errors and 95% confidence interval sizes:
         std_errs, confidence_intervals = [], []
-        for i in xrange(total_match_states):
+        for i in range(total_match_states):
           current_distribution = [bootstrapped_values[j][i] for j in range(1000)]
           std_errs.append(np.std(current_distribution))
           current_distribution.sort()
@@ -1353,7 +1356,7 @@ def format_outfile_header(num_folds, sequence_identity_cutoff, distance, curve_t
                                  'nogrouping_averaged_real_' + au_name,
                                  'nogrouping_averaged_random_' + au_name])]) + '\n'
 
-  return header
+  return header.encode('utf8')
 
 
 ########################################################################################################
@@ -1494,10 +1497,10 @@ if __name__ == "__main__":
     # --------------------------------------------------------------------------------------------------
     # write out results
     for score_type in accuracy_by_ligand.keys():
-      accuracy_handle = gzip.open(outfiles[score_type], 'w') if outfiles[score_type].endswith('gz') else \
-                        open(outfiles[score_type], 'w')
+      accuracy_handle = gzip.open(outfiles[score_type], 'wb') if outfiles[score_type].endswith('gz') else \
+                        open(outfiles[score_type], 'wb')
       accuracy_handle.write(format_outfile_header(str(args.num_folds), args.seq_identity, args.distance, score_type))
       for result_line in sorted(accuracy_by_ligand[score_type]):
-        accuracy_handle.write(result_line)
+        accuracy_handle.write(result_line.encode('utf8'))
       accuracy_handle.close()
       sys.stderr.write('See ' + outfiles[score_type] + '\n')

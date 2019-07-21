@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3
+FROM continuumio/miniconda3:4.5.11
 
 RUN set -x && \
   apt-get update && \
@@ -13,6 +13,7 @@ RUN mkdir /app/ && mkdir /app/src && mkdir /app/tests
 
 COPY environment.yml /app
 COPY setup.py /app
+COPY MANIFEST.in /app
 COPY src /app/src/
 COPY tests /app/tests/
 

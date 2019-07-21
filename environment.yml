@@ -16,6 +16,5 @@ dependencies:
   - tqdm
   - pip:
     - coveralls
-    - prody
     - pytest-cov
     - weblogo

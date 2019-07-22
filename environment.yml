@@ -10,12 +10,12 @@ dependencies:
   - MarkupSafe
   - matplotlib
   - pandas
-  - pip
+  - pip>=19.0.3
   - pytest
   - python=3.7
   - tqdm
   - pip:
     - coveralls
-    - prody --install-option="--no-binary prody"
+    - prody
     - pytest-cov
     - weblogo

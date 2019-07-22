@@ -1,3 +1,2 @@
-include chimera/config.json
-recursive-include chimera/flask/templates *
-recursive-include chimera/flask/static *
+graft src/chimera
+recursive-exclude * __pycache__

@@ -1,4 +1,4 @@
-FROM continuumio/miniconda3:4.5.11
+FROM continuumio/miniconda3:4.6.14
 
 RUN set -x && \
   apt-get update && \

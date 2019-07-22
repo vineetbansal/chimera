@@ -1,9 +1,9 @@
-FROM continuumio/anaconda3
+FROM continuumio/miniconda3
 
 RUN set -x && \
   apt-get update && \
   apt-get install --no-install-recommends --no-install-suggests -y \
-    ghostscript hmmer && \
+    linux-headers-amd64 build-essential libc-dev gcc ghostscript hmmer && \
   apt-get clean && \
 rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 

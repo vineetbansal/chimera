@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/vineetbansal/chimera.svg?branch=master)](https://travis-ci.org/vineetbansal/chimera)
 
 # chimera
-Minimal Flask+Docker Boilerplate
+Web application + Python framework to find interaction sites for Protein Domains.
 
 ### Installation
 

@@ -6,9 +6,11 @@ import logging.config
 import logging
 from types import SimpleNamespace
 import json
-from importlib.resources import read_text
+import pandas as pd
+from importlib.resources import read_text, path
 
 import chimera
+import chimera.data
 
 
 def setup_config():
@@ -45,3 +47,6 @@ def setup_config():
 
 
 config = setup_config()
+
+with path(chimera.data, 'interacdome_fordownload.tsv') as path:
+    df_pfam = pd.read_csv(path, sep='\t', header=0)

@@ -1,7 +1,6 @@
 from unittest import TestCase
-import importlib.resources
 import pandas as pd
-import chimera.data
+from chimera import df_dl
 
 
 class TsvTestCase(TestCase):
@@ -13,25 +12,30 @@ class TsvTestCase(TestCase):
 
     def testNDomains(self):
         """
-        All domain identifier rows that we have
+        No. of unique domain identifier rows that we have
         """
-        with importlib.resources.path(chimera.data, 'interacdome_allresults.tsv') as path:
-            df = pd.read_csv(path, sep='\t', header=0)
-            self.assertEqual(11655, len(df))
+        self.assertEqual(4128, len(df_dl['pfam_id'].unique()))
+
+    def testDomainLength(self):
+        """
+        Each unique domain identifier has a unique domain length
+        """
+        for pfam_id, _df in df_dl.groupby('pfam_id'):
+            self.assertEqual(1, len(_df['domain_length'].unique()))
 
     def testNVisibleDomains(self):
         """
-        All domain identifiers that are displayed on the website
+        All unique domain identifiers that are displayed on the website dropdown
         """
-        with importlib.resources.path(chimera.data, 'interacdome_allresults.tsv') as path:
-            df = pd.read_csv(path, sep='\t', header=0)
-            df = df[(df.num_nonidentical_instances >= 3) & (df.num_structures >= 3)]
-            pfam_ids = pd.unique(df['pfam_id'])
-            self.assertEqual(2263, len(pfam_ids))
+        df = df_dl[(df_dl.num_nonidentical_instances >= 3) & (df_dl.num_structures >= 3)]
+        pfam_ids = pd.unique(df['pfam_id'])
+        self.assertEqual(2263, len(pfam_ids))
 
     def testNBindingFreqs(self):
-        with importlib.resources.path(chimera.data, 'interacdome_allresults.tsv') as path:
-            df = pd.read_csv(path, sep='\t', header=0)
-            row = df[(df.pfam_id == 'PF00004_AAA') & (df.ligand_type == 'ion')].iloc[0]
+        """
+        No. of binding frequencies in each row is equal to the domain length
+        :return:
+        """
+        for i, row in df_dl.iterrows():
             self.assertEqual(row.domain_length, len(row.binding_frequencies.split(',')))
 

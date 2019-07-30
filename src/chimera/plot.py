@@ -1,19 +1,11 @@
 import io
 import base64
-import importlib.resources
-import importlib.resources
-import pandas as pd
 import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 from matplotlib.figure import Figure
+from mpl_toolkits.axes_grid1.parasite_axes import SubplotHost
 
-import chimera.data
-
-with importlib.resources.path(chimera.data, 'interacdome_allresults.tsv') as path:
-    RESULTS = pd.read_csv(path, sep='\t', header=0)
-    RESULTS = RESULTS[
-        (RESULTS.num_nonidentical_instances >= 3) & (RESULTS.num_structures >= 3)
-    ]
+from chimera import config
 
 
 def figure(x, y, title=None, title_fontsize=None, figsize=(50, 3), **kwargs):
@@ -71,12 +63,21 @@ def figure(x, y, title=None, title_fontsize=None, figsize=(50, 3), **kwargs):
 
 
 def binding_freq_figure(pfam_id, ligand_type, title=None, raise_errors=True, detailed=False):
-    df = RESULTS[(RESULTS.pfam_id == pfam_id) & (RESULTS.ligand_type == ligand_type)]
-    if len(df) != 1:
+
+    from chimera import df_dl
+
+    df_dl = df_dl[
+        (df_dl.num_nonidentical_instances >= config.web.min_instances) &
+        (df_dl.num_structures >= config.web.min_structures) &
+        (df_dl.pfam_id == pfam_id) &
+        (df_dl.ligand_type == ligand_type)
+    ]
+
+    if len(df_dl) != 1:
         if raise_errors:
             raise RuntimeError('Did not locate a single row of results')
     else:
-        row = df.iloc[0]
+        row = df_dl.iloc[0]
         if title is None:
             title = '{} per-position binding frequencies'.format(ligand_type)
 
@@ -108,3 +109,32 @@ def binding_freq_figure(pfam_id, ligand_type, title=None, raise_errors=True, det
 
         return figure(**kwargs)
 
+
+def sequence_binding_freq_figure(seq, ligand_labels, data):
+
+    M = len(ligand_labels)
+    L = len(seq)
+
+    fig = Figure(figsize=(200, M))
+    _ = FigureCanvas(fig)
+    ax = SubplotHost(fig, 1, 1, 1)
+    fig.add_subplot(ax)
+
+    ax.imshow(data, cmap='gray_r', vmin=0, vmax=1, origin='lower')
+
+    ax.yaxis.set_ticks(list(range(len(ligand_labels))))
+    ax.set_yticklabels(ligand_labels)
+
+    x_ticks = np.insert(np.arange(-1, L, 5)[1:], 0, [0])
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels([i + 1 for i in x_ticks])
+
+    ax2 = ax.twiny()
+    ax2.set_xlim(ax.get_xlim())
+    ax2.set_xticks(np.arange(0, L))
+    ax2.set_xticklabels(seq)
+
+    img = io.BytesIO()
+    fig.savefig(img, format='png', bbox_extra_artists=[], bbox_inches='tight')
+
+    return base64.b64encode(img.getvalue()).decode()

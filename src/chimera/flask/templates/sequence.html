@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block javascript %}
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        $('#aSample').click(function() {
+            $('#seqTextArea').text("MEGDAVEAIVEESETFIKGKERKTYQRRREGGQEEDACHLPQNQTDGGEVVQDVNSSVQMVMMEQLDPTLLQMKTEVMEGTVAPEAEAAVDDTQIITLQVVNMEEQPINIGELQLVQVPVPVTVPVATTSVEELQGAYENEVSKEGLAESEPMICHTLPLPEGFQVVKVGANGEVETLEQGELPPQEDPSWQKDPDYQPPAKKTKKTKKSKLRYTEEGKDVDVSVYDFEEEQQEGLLSEVNAEKVVGNMKPPKPTKIKKKGVKKTFQCELCSYTCPRRSNLDRHMKSHTDERPHKCHLCGRAFRTVTLLRNHLNTHTGTRPHKCPDCDMAFVTSGELVRHRRYKHTHEKPFKCSMCDYASVEVSKLKRHIRSHTGERPFQCSLCSYASRDTYKLKRHMRTHSGEKPYECYICHARFTQSGTMKMHILQKHTENVAKFHCPHCDTVIARKSDLGVHLRKQHSYIEQGKKCRYCDAVFHERYALIQHQKSHKNEKRFKCDQCDYACRQERHMIMHKRTHTGEKPYACSHCDKTFRQKQLLDMHFKRYHDPNFVPAAFVCSKCGKTFTRRNTMARHADNCAGPDGVEGENGGETKKSKRGRKRKMRSKKEDSSDSENAEPDLDDNEDEEEPAVEIEPEPEPQPVTPAPPPAKKRRGRPPGRTNQPKQNQPTAIIQVEDQNTGAIENIIVEVKKEPDAEPAEGEEEEAQPAATDAPNGDLTPEMILSMMDR");
+        });
+    });
+</script>
+{% endblock %}
+
+{% block main %}
+
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col">
+            <div class="card">
+              <h5 class="card-header">Search Protein Sequence for InteracDome Domains</h5>
+              <div class="card-body">
+                <p class="card-text">Paste your amino acid protein sequence into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding frequencies.</p>
+
+                  <form class="form" action="" method="post">
+                      <div class="form-group">
+                          <label for="seqTextArea">Sequence</label>
+                          <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6"></textarea>
+                      </div>
+                      <div class="form-group">
+                          <label for="aSample">Sample Input:</label>
+                          <a href="#" id="aSample">CTCF</a>
+                      </div>
+                      <button type="submit" class="btn btn-primary">Go</button>
+                  </form>
+              </div>
+
+                {% if img %}
+                    <img src="data:image/png;base64, {{img}}" class="img-responsive" />
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

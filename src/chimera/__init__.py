@@ -13,6 +13,9 @@ import chimera
 import chimera.data
 
 
+logger = logging.getLogger(__name__)
+
+
 def setup_config():
     s = read_text(chimera, 'config.json')
     d = json.loads(s)
@@ -48,5 +51,23 @@ def setup_config():
 
 config = setup_config()
 
-with path(chimera.data, 'interacdome_fordownload.tsv') as path:
-    df_pfam = pd.read_csv(path, sep='\t', header=0)
+# TODO: Why do we have 2 tsvs?
+# TODO: Names of these dataframe directly ported from R - not intuitive!
+
+df_bp = None
+with path(chimera.data, 'interacdome_fordownload.tsv') as p:
+    df_bp = pd.read_csv(p, sep='\t', header=0)
+    logger.info(f'Read {len(df_bp)} records from interacdome_fordownload.tsv')
+
+df_dl = None
+with path(chimera.data, 'interacdome_allresults.tsv') as p:
+    df_dl = pd.read_csv(p, sep='\t', header=0)
+    logger.info(f'Read {len(df_dl)} records from interacdome_allresults.tsv')
+
+# Unpivoted binding-frequencies table which has been pre-filtered on
+# num_nonidentical_instances/num_structures/max_achieved_precision as per the config file
+# TODO: Generated/cache on demand rather than ahead of time!
+binding_frequencies = None
+with path(chimera.data, 'binding_frequencies.csv') as p:
+    binding_frequencies = pd.read_csv(p, index_col=False)
+    logger.info(f'Read {len(binding_frequencies)} records from binding_frequencies.csv')

@@ -27,5 +27,12 @@
         "handlers": ["console"]
       }
     }
+  },
+
+  "web": {
+    "min_instances": 3,
+    "min_structures": 3,
+    "min_achieved_precision": 0.5
   }
+
 }

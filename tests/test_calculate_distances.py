@@ -27,5 +27,6 @@ class CalcDistanceTestCase(TestCase):
                     distance_filepath='distance.txt',
                     include_backbone=False,
                     distance_cutoff=20,
-                    compressed=True
+                    compressed=False,
+                    calculate_overlap=True
                 )

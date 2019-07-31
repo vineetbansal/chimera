@@ -11,10 +11,29 @@ After creating distance files between pdbId-ligandId pairs,
     - meanvdw
     - sumvdw
 
-1. eval_uniqueness --create-alignments --distance mindist
+0. Use hmmr to identify domains
 
-    creates files:
-    /domains/alignments/mindist/*.tmp.fa
+    Resulting file at /domains/BioLiP_2018-09-12-domains-pfam_v31.tsv.gz
+
+    tab-delimited file with columns PDB ID-PDB Chain, Domain Name (unique), and
+    comma-delimited list of (1-indexed domain match state : 0-indexed sequence position : amino acid value)
+
+1. Use the file containing all domain hits to create per-domain, per-ligand alignments
+
+    eval_uniqueness --create_alignments --distance mindist
+
+    a) creates alignment files with names:
+    /domains/alignments/mindist/<domain>_<super_ligand_type>_<distance_metric>.tmpfa
+    e.g.
+    /domains/alignments/mindist/PF00036_EF-hand_1_ALL__mindist.tmpfa
+
+    i.e. each file has to do with one domain and 1 ligand 'type'
+    each line of this file is of the form:
+        2lqcA_10_38  1:10:E,2:11:F, ..
+        (i.e. pdb id_start_end -> hmmer scores)
+
+    b) convert each file created in (a) above to file with name:
+    /domains/alignments/mindist/<domain>_<super_ligand_type>_<distance_metric>.aln.fa
 
 2. eval_uniqueness --distance mindist
 

@@ -456,8 +456,8 @@ def find_closest_chain(pdb_id, pdb_chains, domain_location, ligand_type, distanc
 
   ligand_to_group = ligand_groups()  # original ligand ID -> set of groups
 
-  index_range = map(str, range(int(domain_location.split('_')[0])+1,
-                               int(domain_location.split('_')[1])+2))  # all possible binding sites to consider
+  index_range = list(map(str, range(int(domain_location.split('_')[0])+1,
+                               int(domain_location.split('_')[1])+2)))  # all possible binding sites to consider
 
   distance_fasta = DATAPATH+'processed_data/fasta/'+pdb_id[0]+'/'+pdb_id[:2]+'/'+pdb_id+'_mindist.fa.gz'
   if not os.path.isfile(distance_fasta):

@@ -12,6 +12,7 @@ from weblogo.logo_formatter import png_formatter
 
 from chimera import config, binding_frequencies
 import chimera.data.pfms
+from chimera.data.sample import ctcf
 from chimera.plot import binding_freq_figure, sequence_binding_freq_figure
 
 bp = Blueprint('web', __name__)
@@ -196,4 +197,4 @@ def query():
         ligand_types, data = _query(seq)
         img = sequence_binding_freq_figure(seq, ligand_types, data)
 
-    return render_template('sequence.html', img=img)
+    return render_template('sequence.html', img=img, sample_seq=ctcf)

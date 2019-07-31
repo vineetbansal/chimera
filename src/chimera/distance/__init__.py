@@ -14,6 +14,9 @@ from prody.atomic import AAMAP
 
 from chimera.utils import vdw_radius
 
+# Constant factor used for PDF calculation for a normal distribution. Pre-computed here once.
+NORM_PDF_FACTOR = 1.0/sqrt(2*pi)
+
 tol = np.finfo(float).eps ** 0.25
 logger = logging.getLogger(__name__)
 
@@ -102,7 +105,7 @@ def distance_df_to_csv(df, pdb_id, file_path, compressed=False):
 
 def minf1f2(x, mu2, sd1, sd2):
     min_value = min(e**(-(x**2)/(2*sd1**2))/sd1, e**(-(x-mu2)**2/(2*sd2**2))/sd2)
-    return min_value/sqrt(2*pi)
+    return NORM_PDF_FACTOR * min_value
 
 
 def overlap_radii(dist, r1, r2):

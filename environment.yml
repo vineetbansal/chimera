@@ -9,7 +9,7 @@ dependencies:
   - Jinja2>=2.10.1
   - MarkupSafe
   - matplotlib
-  - pandas
+  - pandas>=0.24.2
   - pip
   - pytest
   - python=3.7

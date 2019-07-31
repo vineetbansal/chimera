@@ -225,7 +225,7 @@ def create_distance_file(pdb_id, pdb_chains, receptor_filepaths, ligand_ids, lig
     df = pd.DataFrame(_rows)
 
     if calculate_overlap:
-        # tqdm.pandas()
+        tqdm.pandas()
         logger.info('adding receptor atom vdw radius')
         df['receptor_atom_radius'] = df.progress_apply(lambda row: vdw_radius(row['receptor_atom_value']), axis=1)
         logger.info('adding ligand atom vdw radius')

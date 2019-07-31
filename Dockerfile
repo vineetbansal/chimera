@@ -16,9 +16,11 @@ COPY setup.py /app
 COPY MANIFEST.in /app
 COPY src /app/src/
 COPY tests /app/tests/
+COPY init.sh /app
 
 WORKDIR /app
 
+RUN chmod u+x init.sh
 RUN ["conda", "env", "create", "-f", "environment.yml"]
 RUN ["/bin/bash", "-c", "source activate chimera && python setup.py install"]
 
@@ -26,5 +28,4 @@ RUN echo "source activate chimera" > ~/.bashrc
 ENV PATH /opt/conda/envs/chimera/bin:$PATH
 
 ENV FLASK_APP=chimera.flask:create_app
-ENTRYPOINT ["/bin/bash", "-c"]
-CMD ["source activate chimera && exec python -m flask run --host=0.0.0.0"]
+ENTRYPOINT ["/bin/bash", "init.sh"]

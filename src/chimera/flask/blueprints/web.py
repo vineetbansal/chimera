@@ -10,7 +10,7 @@ from weblogo import LogoOptions, LogoData, LogoFormat, ColorScheme
 from weblogo.seq import unambiguous_protein_alphabet
 from weblogo.logo_formatter import png_formatter
 
-from chimera import config, binding_frequencies
+from chimera import config, binding_frequencies_interacdome, binding_frequencies_dsprint
 import chimera.data.pfms
 from chimera.data.sample import ctcf
 from chimera.plot import binding_freq_figure, sequence_binding_freq_figure
@@ -103,10 +103,11 @@ def faqs():
     return render_template('faqs.html')
 
 
-def _query(sequence):
+def _query(sequence, algorithm='dsprint'):
     """
     Find out binding frequency data suitable for display on the site
     :param sequence: String of Protein sequence of length L
+    :param algorithm: One of 'dsprint' or 'interacdome'
     :return: A 2-tuple of values
         0: Iterable of strings, indicating ligand-types (length M)
         1: An M x L ndarray of floats, indicating binding frequencies corresponding to each ligand-type/position
@@ -146,7 +147,7 @@ def _query(sequence):
                 'aliseq': d['aliaseq'],
 
                 # TODO - if present in df_bp['pfam_id'].unique()
-                # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies.csv)
+                # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)
                 'interacdome': False
             })
 
@@ -173,6 +174,7 @@ def _query(sequence):
     matches = pd.DataFrame(match_rows)
     logger.info('Created an unpivoted match/sequence table of domain results')
 
+    binding_frequencies = binding_frequencies_interacdome if algorithm == 'interacdome' else binding_frequencies_dsprint
     df = pd.merge(matches, binding_frequencies, left_on=['pfam_domain', 'match_i'], right_on=['pfam_id', 'match_state'])
     logger.info('Merged domain results / binding frequency dataFrames')
 
@@ -194,7 +196,8 @@ def index():
     img = None
     if request.method == 'POST':
         seq = request.form['seqTextArea']
-        ligand_types, data = _query(seq)
-        img = sequence_binding_freq_figure(seq, ligand_types, data)
+        algorithm = request.form['algorithmSelect'].lower()
+        ligand_types, data = _query(seq, algorithm)
+        img = sequence_binding_freq_figure(seq, ligand_types, data, algorithm)
 
     return render_template('index.html', img=img, sample_seq=ctcf)

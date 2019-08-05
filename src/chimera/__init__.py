@@ -1,4 +1,4 @@
-__version__ = "0.1.5"
+__version__ = "0.1.6"
 
 
 import os
@@ -64,10 +64,15 @@ with path(chimera.data, 'interacdome_allresults.tsv') as p:
     df_dl = pd.read_csv(p, sep='\t', header=0)
     logger.info(f'Read {len(df_dl)} records from interacdome_allresults.tsv')
 
-# Unpivoted binding-frequencies table which has been pre-filtered on
+# Unpivoted binding-frequencies table which has been pre-filtered onwedsf
 # num_nonidentical_instances/num_structures/max_achieved_precision as per the config file
-# TODO: Generated/cache on demand rather than ahead of time!
-binding_frequencies = None
-with path(chimera.data, 'binding_frequencies.csv') as p:
-    binding_frequencies = pd.read_csv(p, index_col=False)
-    logger.info(f'Read {len(binding_frequencies)} records from binding_frequencies.csv')
+# TODO: Generate/cache on demand rather than ahead of time!
+binding_frequencies_interacdome = None
+with path(chimera.data, 'binding_frequencies_interacdome.csv') as p:
+    binding_frequencies_interacdome = pd.read_csv(p, index_col=False)
+    logger.info(f'Read {len(binding_frequencies_interacdome)} records from binding_frequencies_interacdome.csv')
+
+binding_frequencies_dsprint = None
+with path(chimera.data, 'binding_frequencies_dsprint.csv') as p:
+    binding_frequencies_dsprint = pd.read_csv(p, index_col=False)
+    logger.info(f'Read {len(binding_frequencies_dsprint)} records from binding_frequencies_dsprint.csv')

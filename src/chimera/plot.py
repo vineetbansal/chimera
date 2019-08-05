@@ -110,7 +110,7 @@ def binding_freq_figure(pfam_id, ligand_type, title=None, raise_errors=True, det
         return figure(**kwargs)
 
 
-def sequence_binding_freq_figure(seq, ligand_labels, data):
+def sequence_binding_freq_figure(seq, ligand_labels, data, algorithm):
 
     M = len(ligand_labels)
     L = len(seq)
@@ -120,6 +120,7 @@ def sequence_binding_freq_figure(seq, ligand_labels, data):
     ax = SubplotHost(fig, 1, 1, 1)
     fig.add_subplot(ax)
 
+    fig.suptitle(algorithm)
     ax.imshow(data, cmap='gray_r', vmin=0, vmax=1, origin='lower')
 
     ax.yaxis.set_ticks(list(range(len(ligand_labels))))

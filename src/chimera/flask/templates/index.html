@@ -1,94 +1,41 @@
 {% extends "base.html" %}
 
-{% block css %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
-{% endblock %}
-
 {% block javascript %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
-        $('.select2').select2();
+        $('#aSample').click(function() {
+            $('#seqTextArea').text("{{ sample_seq }}");
+        });
     });
 </script>
 {% endblock %}
 
 {% block main %}
-<h1>InteracDome</h1>
-<p class="lead">InteracDome is a resource consisting of inferred interaction sites in 4,000+ protein domains</p>
 
 <div class="container-fluid">
-    <div class="row">
-        <div class="col">
-
-                <img src="https://interacdome.princeton.edu/fig1c.jpg" width="100%"/>
-                <p style="margin-top:1em; font-size:1.15em;">
-                    <span style="color:#e31a1c; font-weight:bold;">InteracDome</span>
-                    is a resource consisting of
-                    inferred interaction sites in 4,128 protein domains from
-                    <a href="http://pfam.xfam.org" target="_blank">Pfam</a>
-                    (v31.0). InteracDome models
-                    domain interactions with DNA, RNA, small molecules, peptides and ions.
-                </p>
-
-                <p>
-                    <strong>
-                    S.N. Kobren and M. Singh (2018) "Systematic domain-based aggregation of protein structures
-                    highlights DNA-, RNA-, and other ligand-binding positions."
-                    <em>Nucleic Acids Res,</em>
-                    47(2): 582-593.
-                    <a href="http://dx.doi.org/10.1093/nar/gky1224" target="_blank">[doi: 10.1093/nar/gky1224]</a>
-                    </strong>
-                </p>
-
-        </div>
-    </div>
 
     <div class="row">
         <div class="col">
             <div class="card">
-              <h5 class="card-header">View Per-Position Binding Frequencies</h5>
+              <h5 class="card-header">Search Protein Sequence for Domains</h5>
               <div class="card-body">
-                <p class="card-text">In this interactive web browser, we only display per-domain-position binding frequencies</p>
-                <ul>
-                    <li>
-                        from the <strong>representable-NR</strong> set (see Download page for description)
-                    </li>
-                    <li>
-                        that model interactions with DNA base, DNA backbone, RNA base, RNA backbone, peptides,
-                        and the 'ion', 'metabolite', and 'small molecule' groups.
-                    </li>
-                </ul>
-
-                <p class="card-text">The complete set of domain interactions (including with particular ions or small molecules) is available for
-                    download.</p>
+                <p class="card-text">Paste your amino acid protein sequence into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding frequencies.</p>
 
                   <form class="form" action="" method="post">
                       <div class="form-group">
-                          <label for="pfam_id">Domain (organized by Pfam identifier)</label>
-                            <select class="select2" name="pfam_id" class="form-control" style="width: 300px;">
-                                {% for pfam_id in pfam_ids %}
-                                <option value="{{ pfam_id }}">{{ pfam_id }}</option>
-                                {% endfor %}
-                            </select>
+                          <label for="seqTextArea">Sequence</label>
+                          <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6"></textarea>
+                      </div>
+                      <div class="form-group">
+                          <label for="aSample">Sample Input:</label>
+                          <a href="#" id="aSample">CTCF</a>
                       </div>
                       <button type="submit" class="btn btn-primary">Go</button>
                   </form>
-
               </div>
 
-                {% if imgs %}
-                <ul class="list-group list-group-flush">
-                {% for img in imgs %}
-                    <li class="list-group-item">
-                        <img src="data:image/png;base64, {{img}}" width="100%"/>
-                    </li>
-                {% endfor %}
-                </ul>
-
-                <div class="card-body">
-                    <p class="text-center"><a href="{{ url_for('web.detail', pfam_id=selected_pfam_id) }}" target="_blank" class="btn btn-primary">View Hi-Res</a></p>
-                </div>
+                {% if img %}
+                    <img src="data:image/png;base64, {{img}}" class="img-responsive" />
                 {% endif %}
             </div>
         </div>

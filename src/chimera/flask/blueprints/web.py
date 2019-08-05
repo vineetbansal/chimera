@@ -43,8 +43,8 @@ def seq_to_matchstates(seq, start, end):
     return match_states, seq_indices
 
 
-@bp.route('/', methods=['GET', 'POST'])
-def index():
+@bp.route('/interacdome', methods=['GET', 'POST'])
+def interacdome():
 
     from chimera import df_dl
 
@@ -61,7 +61,7 @@ def index():
         selected_pfam_id = request.form['pfam_id']
         imgs = images(selected_pfam_id, detailed=False)
 
-    return render_template('index.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, imgs=imgs)
+    return render_template('interacdome.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, imgs=imgs)
 
 
 @bp.route('/detail/<pfam_id>')
@@ -189,12 +189,12 @@ def _query(sequence):
     return ligand_types, data
 
 
-@bp.route('/query', methods=['GET', 'POST'])
-def query():
+@bp.route('/', methods=['GET', 'POST'])
+def index():
     img = None
     if request.method == 'POST':
         seq = request.form['seqTextArea']
         ligand_types, data = _query(seq)
         img = sequence_binding_freq_figure(seq, ligand_types, data)
 
-    return render_template('sequence.html', img=img, sample_seq=ctcf)
+    return render_template('index.html', img=img, sample_seq=ctcf)

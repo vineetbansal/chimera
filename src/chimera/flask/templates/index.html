@@ -5,11 +5,19 @@
 {% endblock %}
 
 {% block javascript %}
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
         $('#aSample').click(function() {
             $('#seqTextArea').text("{{ sample_seq }}");
         });
+
+        var data = {{ data | safe }};
+        if (data.length > 0) {
+            Plotly.plot('bargraph', data, {});
+        }
+
     });
 </script>
 {% endblock %}
@@ -45,13 +53,23 @@
                       <button type="submit" class="btn btn-primary">Go</button>
                   </form>
               </div>
-
-                {% if img %}
-                    <img src="data:image/png;base64, {{img}}" class="img-responsive" />
-                {% endif %}
             </div>
         </div>
     </div>
+
+    {% if data %}
+    <div class="row">
+        <div class="col">
+            <div class="card">
+              <h5 class="card-header">Domain-inferred binding frequencies across sequence positions</h5>
+              <div class="card-body">
+                  <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>
+                  <div class="chart" id="bargraph"></div>
+              </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 
 </div>
 {% endblock %}

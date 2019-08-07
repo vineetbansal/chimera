@@ -1,19 +1,14 @@
-import importlib.resources
-import base64
 import logging
 import numpy as np
 import pandas as pd
 import requests
 import json
 from flask import Blueprint, request, render_template
-from weblogo import LogoOptions, LogoData, LogoFormat, ColorScheme
-from weblogo.seq import unambiguous_protein_alphabet
-from weblogo.logo_formatter import png_formatter
 
 from chimera import config, binding_frequencies_interacdome, binding_frequencies_dsprint
-import chimera.data.pfms
 from chimera.data.sample import ctcf
-from chimera.plot import binding_freq_figure, sequence_binding_freq_figure
+from chimera.utils import find_hmmr_domains_web
+from chimera.plots import binding_freq_plot_data_domain, binding_freq_plot_data_sequence
 
 bp = Blueprint('web', __name__)
 logger = logging.getLogger(__name__)
@@ -45,7 +40,6 @@ def seq_to_matchstates(seq, start, end):
 
 @bp.route('/interacdome', methods=['GET', 'POST'])
 def interacdome():
-
     from chimera import df_dl
 
     df_dl = df_dl[
@@ -55,47 +49,13 @@ def interacdome():
 
     pfam_ids = pd.unique(df_dl['pfam_id'])
 
-    imgs = []
     selected_pfam_id = None
+    data = []
     if request.method == 'POST':
         selected_pfam_id = request.form['pfam_id']
-        imgs = images(selected_pfam_id, detailed=False)
+        data = binding_freq_plot_data_domain(selected_pfam_id)
 
-    return render_template('interacdome.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, imgs=imgs)
-
-
-@bp.route('/detail/<pfam_id>')
-def detail(pfam_id):
-    return render_template('detail.html', pfam_id=pfam_id, imgs=images(pfam_id, detailed=True))
-
-
-def images(pfam_id, detailed=True):
-    imgs = list(filter(
-        None,
-        [binding_freq_figure(pfam_id, _type, raise_errors=False, detailed=detailed) for _type in ('ion', 'metabolite', 'sm')]
-    ))
-
-    with importlib.resources.path(chimera.data.pfms, pfam_id + '.pfm') as path:
-        df = pd.read_csv(path, sep='\t', header=None, index_col=0)
-
-        data = LogoData.from_counts(alphabet=unambiguous_protein_alphabet, counts=df.values.T)
-
-        img = png_formatter(
-            data,
-            LogoFormat(
-                data,
-                LogoOptions(
-                    fineprint=False,
-                    logo_title='',
-                    color_scheme=ColorScheme(),
-                    stacks_per_line=data.length  # all data on one line
-                )
-            )
-        )
-
-        img = base64.b64encode(img).decode()
-        imgs.append(img)
-    return imgs
+    return render_template('interacdome.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
 
 
 @bp.route('/faqs')
@@ -114,21 +74,7 @@ def _query(sequence, algorithm='dsprint'):
             combination.
     """
     sequence_length = len(sequence)
-
-    logger.info('Querying Hmmr Web API')
-    r = requests.post(
-        'https://www.ebi.ac.uk/Tools/hmmer/search/hmmscan',
-        headers={'Content-type': 'application/json', 'Accept': 'application/json'},
-        data=json.dumps({
-            'hmmdb': 'pfam',
-            'cut_ga': True,
-            'seq': sequence
-        }),
-    ).json()
-    logger.info('Hmmr Web API response obtained')
-
-    hits = r['results']['hits']
-    logger.info(f'No. of Hmmer hits = {len(hits)}')
+    hits = find_hmmr_domains_web(sequence)['hits']
 
     results = []  # A list-of-dicts that we'll convert to a DataFrame
     for hit in hits:
@@ -145,13 +91,13 @@ def _query(sequence, algorithm='dsprint'):
                 'reported': bool(d['is_reported']),
                 'e_value': float(d['ievalue']),
                 'aliseq': d['aliaseq'],
-
-                # TODO - if present in df_bp['pfam_id'].unique()
-                # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)
-                'interacdome': False
             })
 
-    domains = pd.DataFrame(results)
+    return pd.DataFrame(results)
+
+    # TODO - if present in df_bp['pfam_id'].unique()
+    # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)
+    domains['interacdome'] = False
 
     domains = domains[(
         domains['bit_score'] > 0) &
@@ -193,11 +139,11 @@ def _query(sequence, algorithm='dsprint'):
 
 @bp.route('/', methods=['GET', 'POST'])
 def index():
-    img = None
+    data = []
     if request.method == 'POST':
         seq = request.form['seqTextArea']
         algorithm = request.form['algorithmSelect'].lower()
         ligand_types, data = _query(seq, algorithm)
-        img = sequence_binding_freq_figure(seq, ligand_types, data, algorithm)
+        data = binding_freq_plot_data_sequence(seq, ligand_types, data, algorithm)
 
-    return render_template('index.html', img=img, sample_seq=ctcf)
+    return render_template('index.html', data=data, sample_seq=ctcf)

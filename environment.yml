@@ -16,6 +16,7 @@ dependencies:
   - tqdm=4.31.1
   - pip:
     - coveralls
+    - plotly
     - prody
     - pytest-cov
     - weblogo

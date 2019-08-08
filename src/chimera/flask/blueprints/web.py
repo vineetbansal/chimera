@@ -74,7 +74,7 @@ def _query(sequence, algorithm='dsprint'):
             combination.
     """
     sequence_length = len(sequence)
-    hits = find_hmmr_domains_web(sequence)['hits']
+    hits = find_hmmr_domains_web(sequence)
 
     results = []  # A list-of-dicts that we'll convert to a DataFrame
     for hit in hits:
@@ -93,7 +93,7 @@ def _query(sequence, algorithm='dsprint'):
                 'aliseq': d['aliaseq'],
             })
 
-    return pd.DataFrame(results)
+    domains = pd.DataFrame(results)
 
     # TODO - if present in df_bp['pfam_id'].unique()
     # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)

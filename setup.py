@@ -2,7 +2,7 @@ from setuptools import setup, find_namespace_packages
 
 setup(
     name='chimera',
-    version='0.1.7',
+    version='0.1.8',
     description='Protein Domain Identification Package',
     url='https://github.com/vineetbansal/chimera',
     author='Vineet Bansal',

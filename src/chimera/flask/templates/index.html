@@ -10,13 +10,31 @@
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
         $('#aSample').click(function() {
-            $('#seqTextArea').text("{{ sample_seq }}");
+            $('#seqTextArea').text(">seq0\n{{ sample_seq }}");
         });
 
         var data = {{ data | safe }};
-        if (data.length > 0) {
-            Plotly.plot('bargraph', data, {});
-        }
+        $.each(data , function(index, bars_data) {
+          var div_id = "bargraph" + index;
+          $('#bargraphs').append("<div class='chart' id='"+div_id+"'></div>");
+            var layout = {
+              title: {
+                text:bars_data.seq_id + ' - Domain inferred binding frequencies (' + '{{ algorithm }}' + ')'
+              },
+              xaxis: {
+                title: {
+                  text: 'Sequence Position'
+                }
+              },
+              yaxis: {
+                title: {
+                  text: 'Binding Frequency'
+                }
+              }
+            };
+          Plotly.plot(div_id, bars_data.bars, layout);
+        });
+
 
     });
 </script>
@@ -31,12 +49,12 @@
             <div class="card">
               <h5 class="card-header">Search Protein Sequence for Domains</h5>
               <div class="card-body">
-                <p class="card-text">Paste your amino acid protein sequence into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding frequencies.</p>
+                <p class="card-text">Paste your amino acid protein sequence(s) into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding frequencies.</p>
 
                   <form class="form" action="" method="post">
                       <div class="form-group">
                           <label for="seqTextArea">Sequence</label>
-                          <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6"></textarea>
+                          <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6">{{ seq }}</textarea>
                       </div>
                       <div class="form-group">
                           <label for="aSample">Sample Input:</label>
@@ -57,14 +75,14 @@
         </div>
     </div>
 
-    {% if data %}
-    <div class="row">
+    {% if data != '[]' %}
+    <div class="row my-4">
         <div class="col">
             <div class="card">
               <h5 class="card-header">Domain-inferred binding frequencies across sequence positions</h5>
               <div class="card-body">
                   <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>
-                  <div class="chart" id="bargraph"></div>
+                  <div id="bargraphs"></div>
               </div>
             </div>
         </div>

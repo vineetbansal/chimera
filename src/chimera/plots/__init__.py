@@ -31,7 +31,7 @@ def binding_freq_plot_data_domain(pfam_id):
     return json.dumps(bars, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-def binding_freq_plot_data_sequence(seq, ligand_types, data, algorithm):
+def binding_freq_plot_data_sequence(seq, ligand_types, data):
 
     sequence_length = len(seq)
 
@@ -45,4 +45,4 @@ def binding_freq_plot_data_sequence(seq, ligand_types, data, algorithm):
             )
         )
 
-    return json.dumps(bars, cls=plotly.utils.PlotlyJSONEncoder)
+    return bars

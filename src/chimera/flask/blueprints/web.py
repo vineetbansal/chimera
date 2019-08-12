@@ -1,13 +1,13 @@
 import logging
 import numpy as np
 import pandas as pd
-import requests
 import json
+import plotly
 from flask import Blueprint, request, render_template
 
 from chimera import config, binding_frequencies_interacdome, binding_frequencies_dsprint
 from chimera.data.sample import ctcf
-from chimera.utils import find_hmmr_domains_web
+from chimera.utils import find_hmmr_domains_web, parse_fasta
 from chimera.plots import binding_freq_plot_data_domain, binding_freq_plot_data_sequence
 
 bp = Blueprint('web', __name__)
@@ -139,11 +139,21 @@ def _query(sequence, algorithm='dsprint'):
 
 @bp.route('/', methods=['GET', 'POST'])
 def index():
-    data = []
+    l = []
+    algorithm = ''
+    seq_text = ''
     if request.method == 'POST':
-        seq = request.form['seqTextArea']
+        seq_text = request.form['seqTextArea']
         algorithm = request.form['algorithmSelect'].lower()
-        ligand_types, data = _query(seq, algorithm)
-        data = binding_freq_plot_data_sequence(seq, ligand_types, data, algorithm)
 
-    return render_template('index.html', data=data, sample_seq=ctcf)
+        sequences = parse_fasta(seq_text)
+        for sequence in sequences:
+            seq_id = sequence.name
+            seq = str(sequence.seq)
+            ligand_types, data = _query(seq, algorithm)
+            bars = binding_freq_plot_data_sequence(seq, ligand_types, data)
+
+            l.append({'bars': bars, 'seq_id': seq_id})
+
+    s = json.dumps(l, cls=plotly.utils.PlotlyJSONEncoder)
+    return render_template('index.html', data=s, seq=seq_text, sample_seq=ctcf, algorithm=algorithm)

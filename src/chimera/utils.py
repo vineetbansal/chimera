@@ -5,7 +5,9 @@ import importlib.resources
 import pandas as pd
 import os
 from subprocess import run
+from io import StringIO
 from tempfile import NamedTemporaryFile
+from Bio import SeqIO
 
 import chimera.data
 
@@ -158,3 +160,10 @@ def find_hmmr_domains_local(sequence):
     print(p.returncode)
 
     os.unlink(f.name)
+
+
+def parse_fasta(s, default_seq_id='seq0'):
+    sequences = list(SeqIO.parse(StringIO(s), 'fasta'))
+    if not sequences:
+        sequences = list(SeqIO.parse(StringIO(f'>{default_seq_id}\n' + s), 'fasta'))
+    return sequences

@@ -7,19 +7,21 @@
 {% block javascript %}
 <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+<script src="{{url_for('static', filename='vendor/datatables/datatables.js')}}"></script>
+<link href="{{url_for('static', filename='vendor/datatables/datatables.min.css')}}" rel="stylesheet"/>
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
-        $('#aSample').click(function() {
-            $('#seqTextArea').text(">seq0\n{{ sample_seq }}");
+        $('#aSample').click(function(event) {
+            $('#seqTextArea').text(">ctcf\n{{ sample_seq }}");
         });
 
-        var data = {{ data | safe }};
+        var data = {{ data_plotly | safe }};
         $.each(data , function(index, bars_data) {
           var div_id = "bargraph" + index;
           $('#bargraphs').append("<div class='chart' id='"+div_id+"'></div>");
             var layout = {
               title: {
-                text:bars_data.seq_id + ' - Domain inferred binding frequencies (' + '{{ algorithm }}' + ')'
+                text:bars_data.seq_name + ' - Domain inferred binding frequencies (' + '{{ algorithm }}' + ')'
               },
               xaxis: {
                 title: {
@@ -35,6 +37,7 @@
           Plotly.plot(div_id, bars_data.bars, layout);
         });
 
+         var table = $('#tbl').DataTable({"searching": false});
 
     });
 </script>
@@ -50,22 +53,27 @@
               <h5 class="card-header">Search Protein Sequence for Domains</h5>
               <div class="card-body">
                 <p class="card-text">Paste your amino acid protein sequence(s) into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding frequencies.</p>
-
-                  <form class="form" action="" method="post">
+                  <form class="form" action="" method="post" enctype="multipart/form-data">
                       <div class="form-group">
-                          <label for="seqTextArea">Sequence</label>
-                          <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6">{{ seq }}</textarea>
+                          <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6" aria-describedby="seqTextHelpBlock">{{ seq }}</textarea>
+                          <small id="seqTextHelpBlock" class="form-text text-muted">
+                              Paste protein sequence(s) in Fasta format. See <a href="#" id="aSample">sample</a> input.
+                              Or upload a .fasta file using the button below.
+                          </small>
                       </div>
                       <div class="form-group">
-                          <label for="aSample">Sample Input:</label>
-                          <a href="#" id="aSample">CTCF</a>
+                          <input type="file" class="form-control-file" id="seqFile" name="seqFile">
                       </div>
                       <div class="form-group">
                           <label for="algorithmSelect">Algorithm</label>
-                          <select id="algorithmSelect" name="algorithmSelect">
-                              <option selected="selected">dSPRINT</option>
-                              <option >InteracDome</option>
+                          <select id="algorithmSelect" name="algorithmSelect" aria-describedby="algorithmSelectHelpBlock">
+                              <option selected="selected" value="dSPRINT">dSPRINT</option>
+                              <option value="InteracDome">InteracDome</option>
                           </select>
+                          <small id="algorithmSelectHelpBlock" class="form-text text-muted">
+                              The site supports <a href="{{ url_for('web.dsprint') }}">dSPRINT</a> and <a href="{{ url_for('web.interacdome') }}">InteracDome</a>
+                              algorithms for determining ligand-binding frequencies.
+                          </small>
                       </div>
 
                       <button type="submit" class="btn btn-primary">Go</button>
@@ -75,12 +83,71 @@
         </div>
     </div>
 
-    {% if data != '[]' %}
+    {% if n_hits > 0 %}
+    <div class="row my-4">
+        <div class="col">
+            <div class="card">
+              <h5 class="card-header">Domain Hits</h5>
+              <div class="card-body">
+                  {% if n_sequences_discarded >0 %}
+                      <div class="alert alert-warning" role="alert">
+                        Detected {{ max_sequences+n_sequences_discarded }} sequences in your input.
+                          The maximum no. of sequences allowed is {{ max_sequences }}. Discarding {{ n_sequences_discarded }}.
+                      </div>
+                  {% endif %}
+                  <table id="tbl" class="table">
+                      <thead>
+                      <tr>
+                          <th>seq_index</th>
+                          <th>seq_name</th>
+                          <th>pfam_domain</th>
+                          <th>bit_score</th>
+                          <th>domain_length</th>
+                          <th>e_value</th>
+                          <th>hmm_start</th>
+                          <th>hmm_end</th>
+                          <th>target_start</th>
+                          <th>target_end</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {% for i, row in df.iterrows() %}
+                          <tr>
+                          <td>{{ row.seq_index }}</td>
+                          <td>{{ row.seq_name }}</td>
+                          <td>{{ row.pfam_domain }}</td>
+                          <td>{{ row.bit_score }}</td>
+                          <td>{{ row.domain_length }}</td>
+                          <td>{{ row.e_value }}</td>
+                          <td>{{ row.hmm_start }}</td>
+                          <td>{{ row.hmm_end }}</td>
+                          <td>{{ row.target_start }}</td>
+                          <td>{{ row.target_end }}</td>
+                          </tr>
+                      {% endfor %}
+                      </tbody>
+                  </table>
+              </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if n_graphs > 0 %}
     <div class="row my-4">
         <div class="col">
             <div class="card">
               <h5 class="card-header">Domain-inferred binding frequencies across sequence positions</h5>
               <div class="card-body">
+                  {% if n_graphs_discarded > 0 %}
+                      <div class="alert alert-warning" role="alert">
+                          Only displaying the first {{ max_graphs }} graphs. Please <a href="{{ url_for('web.seq_results', filename=result_filename) }}">download</a> the data to get complete results.
+                      </div>
+                  {% else %}
+                      <div class="alert alert-success" role="alert">
+                          Please <a href="{{ url_for('web.seq_results', filename=result_filename) }}">download</a> the data to get complete results.
+                      </div>
+                  {% endif %}
                   <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>
                   <div id="bargraphs"></div>
               </div>

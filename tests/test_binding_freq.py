@@ -1,6 +1,6 @@
 from unittest import TestCase
 from chimera.data.sample import ctcf
-from chimera.flask.blueprints.web import seq_to_matchstates
+from chimera.core import seq_to_matchstates
 
 
 class BindingSeqTestCase(TestCase):

@@ -1,4 +1,6 @@
 import json
+import numpy as np
+import pandas as pd
 import plotly
 import plotly.graph_objs as go
 
@@ -31,9 +33,16 @@ def binding_freq_plot_data_domain(pfam_id):
     return json.dumps(bars, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-def binding_freq_plot_data_sequence(seq, ligand_types, data):
+def binding_freq_plot_data_sequence(seq, df):
 
     sequence_length = len(seq)
+    ligand_types = df.ligand_type.unique()
+
+    data = np.zeros((len(ligand_types), sequence_length))
+    for j, ligand_type in enumerate(ligand_types):
+        bf = df[df.ligand_type == ligand_type].groupby('seq_i')['binding_frequency'].max()
+        bf = bf.reindex(pd.RangeIndex(1, sequence_length + 1), fill_value=0)
+        data[j, :] = bf.values
 
     bars = []
     for ligand_type, row in zip(ligand_types, data):

@@ -23,13 +23,16 @@
 
       <div class="collapse navbar-collapse" id="navbarsExampleDefault">
         <ul class="navbar-nav mr-auto">
-          <li class="nav-item active">
+          <li class="nav-item {% if request.endpoint == 'web.index' %}active{% endif %}">
             <a class="nav-link" href="{{ url_for('web.index') }}">Home <span class="sr-only">(current)</span></a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item {% if request.endpoint == 'web.dsprint' %}active{% endif %}">
+            <a class="nav-link" href="{{ url_for('web.dsprint') }}">dSPRINT</a>
+          </li>
+          <li class="nav-item {% if request.endpoint == 'web.interacdome' %}active{% endif %}">
             <a class="nav-link" href="{{ url_for('web.interacdome') }}">InteracDome</a>
           </li>
-          <li class="nav-item">
+          <li class="nav-item {% if request.endpoint == 'web.faqs' %}active{% endif %}">
             <a class="nav-link" href="{{ url_for('web.faqs') }}">FAQs</a>
           </li>
         </ul>
@@ -51,7 +54,8 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="{{ url_for('static', filename='vendor/jquery-slim.min.js') }}"></script>
     <script src="{{ url_for('static', filename='vendor/popper.min.js') }}"></script>
-    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap/js/bootstrap.js') }}"></script>
+
     {% block javascript %}
     {% endblock %}
   </body>

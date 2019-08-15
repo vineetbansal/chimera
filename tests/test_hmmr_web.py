@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from chimera.utils import find_hmmr_domains_web
+from chimera.core.hmmr import find_hmmr_domains_web
 from chimera.data.sample import ctcf
 
 

@@ -3,7 +3,7 @@ from importlib.resources import path
 from subprocess import run
 
 import chimera.data.sample as sample
-from chimera.utils import find_hmmr_domains_local
+from chimera.core.hmmr import find_hmmr_domains_local
 from chimera.data.sample import ctcf
 
 

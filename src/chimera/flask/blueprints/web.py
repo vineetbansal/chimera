@@ -1,41 +1,24 @@
 import logging
-import numpy as np
 import pandas as pd
 import json
 import plotly
-from flask import Blueprint, request, render_template
+from tempfile import NamedTemporaryFile
+import base64
+from flask import Blueprint, request, render_template, send_file
 
-from chimera import config, binding_frequencies_interacdome, binding_frequencies_dsprint
+from chimera import config
 from chimera.data.sample import ctcf
-from chimera.utils import find_hmmr_domains_web, parse_fasta
+from chimera.utils import parse_fasta
+from chimera.core import query
 from chimera.plots import binding_freq_plot_data_domain, binding_freq_plot_data_sequence
 
 bp = Blueprint('web', __name__)
 logger = logging.getLogger(__name__)
 
 
-def seq_to_matchstates(seq, start, end):
-    """
-    Determine the 'index' and 'matchstate' information of a given sequence.
-    TODO: Code ported directly from R - Could use an intuitive explanation!
-    :param seq: A string of single-letter components of a sequence, which can contain lowercase characters
-        or '-' characters.
-    :return: A 2-tuple of arrays
-        0: array indicating indices
-        1: array indicating match-states.
-    """
-    match_states = np.zeros(len(seq)).astype('int')
-    match_states_mask = np.array([s_i.upper() == s_i for s_i in seq])
-    match_states[match_states_mask] = np.arange(1, len(match_states[match_states_mask])+1)
-    seq_indices = np.zeros(len(seq)).astype('int')
-    seq_indices_mask = np.array([s_i != '-' for s_i in seq])
-    seq_indices[seq_indices_mask] = np.arange(start, end+1)
-    assert len(match_states) == len(seq_indices), "Match states and seq indices must have same length"
-
-    # line up the outputs, filter out any 0s (in either of them)
-    match_states, seq_indices = zip(*[(m, s) for m, s in zip(match_states, seq_indices) if m != 0 and s != 0])
-
-    return match_states, seq_indices
+@bp.route('/dsprint')
+def dsprint():
+    return render_template('dsprint.html')
 
 
 @bp.route('/interacdome', methods=['GET', 'POST'])
@@ -63,97 +46,91 @@ def faqs():
     return render_template('faqs.html')
 
 
-def _query(sequence, algorithm='dsprint'):
-    """
-    Find out binding frequency data suitable for display on the site
-    :param sequence: String of Protein sequence of length L
-    :param algorithm: One of 'dsprint' or 'interacdome'
-    :return: A 2-tuple of values
-        0: Iterable of strings, indicating ligand-types (length M)
-        1: An M x L ndarray of floats, indicating binding frequencies corresponding to each ligand-type/position
-            combination.
-    """
-    sequence_length = len(sequence)
-    hits = find_hmmr_domains_web(sequence)
-
-    results = []  # A list-of-dicts that we'll convert to a DataFrame
-    for hit in hits:
-        for d in hit['domains']:
-            pfam_name = d['alihmmacc'][:7] + '_' + d['alihmmname']  # TODO: Why this strange clipping of names?
-            results.append({
-                'pfam_domain': pfam_name,
-                'target_start': int(d['alisqfrom']),
-                'target_end': int(d['alisqto']),
-                'hmm_start': int(d['alihmmfrom']),
-                'hmm_end': int(d['alihmmto']),
-                'domain_length': int(d['aliM']),
-                'bit_score': float(d['bitscore']),
-                'reported': bool(d['is_reported']),
-                'e_value': float(d['ievalue']),
-                'aliseq': d['aliaseq'],
-            })
-
-    domains = pd.DataFrame(results)
-
-    # TODO - if present in df_bp['pfam_id'].unique()
-    # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)
-    domains['interacdome'] = False
-
-    domains = domains[(
-        domains['bit_score'] > 0) &
-        (domains['hmm_start'] == 1) &
-        (domains['hmm_end'] == domains['domain_length'])
-    ]
-    logger.info(f'After filtering, obtained {len(domains)} domain results from Hmmr.')
-
-    domains[['match_states', 'seq_indices']] = domains.apply(
-        lambda row: pd.Series(seq_to_matchstates(row.aliseq, row.target_start, row.target_end)),
-        axis=1
-    )
-    logger.info('Added match state and sequence index information to results')
-
-    match_rows = []
-    for pfam_domain, _df in domains.groupby('pfam_domain'):
-        for _, row in _df.iterrows():
-            for match_i, seq_i in zip(row.match_states, row.seq_indices):
-                match_rows.append({'pfam_domain': pfam_domain, 'match_i': match_i, 'seq_i': seq_i})
-    matches = pd.DataFrame(match_rows)
-    logger.info('Created an unpivoted match/sequence table of domain results')
-
-    binding_frequencies = binding_frequencies_interacdome if algorithm == 'interacdome' else binding_frequencies_dsprint
-    df = pd.merge(matches, binding_frequencies, left_on=['pfam_domain', 'match_i'], right_on=['pfam_id', 'match_state'])
-    logger.info('Merged domain results / binding frequency dataFrames')
-
-    ligand_types = df.ligand_type.unique()
-
-    data = np.zeros((len(ligand_types), sequence_length))
-    for i, ligand_type in enumerate(ligand_types):
-        bf = df[df.ligand_type == ligand_type].groupby('seq_i')['binding_frequency'].max()
-        bf = bf.reindex(pd.RangeIndex(1, sequence_length+1), fill_value=0)
-        data[i, :] = bf.values
-
-    # TODO: When displaying, sort by target_start (df = df.sort_values('target_start'))
-
-    return ligand_types, data
-
-
 @bp.route('/', methods=['GET', 'POST'])
 def index():
-    l = []
+
+    data_plotly = []
     algorithm = ''
     seq_text = ''
+    df = None
+    n_hits = 0
+
+    n_sequences = 0
+    n_sequences_discarded = 0
+    n_graphs = 0
+    n_graphs_discarded = 0
+    max_sequences = config.web.max_sequences
+    max_graphs = config.web.max_graphs
+    result_filename = ''
+
     if request.method == 'POST':
-        seq_text = request.form['seqTextArea']
-        algorithm = request.form['algorithmSelect'].lower()
+        seq_file_text = request.files['seqFile'].read().decode('utf8')
+        algorithm = request.form['algorithmSelect']
+        if seq_file_text:
+            seq_text = seq_file_text
+        else:
+            seq_text = request.form['seqTextArea']
 
         sequences = parse_fasta(seq_text)
-        for sequence in sequences:
-            seq_id = sequence.name
+        n_sequences_discarded = max(0, len(sequences)-max_sequences)
+        if n_graphs_discarded > 0:
+            sequences = sequences[:-n_sequences_discarded]
+        n_sequences = len(sequences)
+        n_graphs_discarded = max(0, n_sequences-max_graphs)
+        n_graphs = n_sequences - n_graphs_discarded
+
+        domain_dataframes = []
+        binding_dataframes = []
+        for i, sequence in enumerate(sequences):
+            seq_name = sequence.name
             seq = str(sequence.seq)
-            ligand_types, data = _query(seq, algorithm)
-            bars = binding_freq_plot_data_sequence(seq, ligand_types, data)
 
-            l.append({'bars': bars, 'seq_id': seq_id})
+            domain_dataframe, binding_dataframe = query(seq, algorithm)
 
-    s = json.dumps(l, cls=plotly.utils.PlotlyJSONEncoder)
-    return render_template('index.html', data=s, seq=seq_text, sample_seq=ctcf, algorithm=algorithm)
+            domain_dataframe['seq_index'] = i + 1
+            domain_dataframe['seq_name'] = seq_name
+            domain_dataframes.append(domain_dataframe)
+
+            binding_dataframe['seq_index'] = i + 1
+            binding_dataframe['seq_name'] = seq_name
+            binding_dataframes.append(binding_dataframe)
+
+            if i < n_graphs:
+                bars = binding_freq_plot_data_sequence(seq, binding_dataframe)
+                data_plotly.append({'bars': bars, 'seq_index': i + 1, 'seq_name': seq_name})
+
+        df = pd.concat(domain_dataframes, axis=0)
+        n_hits = len(df)
+
+        # Create a temporary file for results
+        with NamedTemporaryFile(delete=False) as f:
+            pd.concat(binding_dataframes, axis=0).to_csv(f.name, index=False)
+            result_filename = base64.encodebytes(f.name.encode('utf8')).decode('utf8')
+
+    data_plotly = json.dumps(data_plotly, cls=plotly.utils.PlotlyJSONEncoder)
+
+    return render_template(
+        'index.html',
+        n_hits=n_hits,
+
+        # For displaying warnings
+        n_sequences=n_sequences,
+        n_sequences_discarded=n_sequences_discarded,
+        n_graphs=n_graphs,
+        n_graphs_discarded=n_graphs_discarded,
+        max_sequences=max_sequences,
+        max_graphs=max_graphs,
+
+        df=df,
+        data_plotly=data_plotly,
+        seq=seq_text,
+        sample_seq=ctcf,
+        algorithm=algorithm,
+        result_filename=result_filename
+    )
+
+
+@bp.route('/seq_results/<filename>')
+def seq_results(filename):
+    filename = base64.decodebytes(filename.encode('utf8')).decode('utf8')
+    return send_file(filename ,as_attachment=True, attachment_filename='results.csv')

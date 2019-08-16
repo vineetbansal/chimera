@@ -3,8 +3,7 @@ import pandas as pd
 import json
 import plotly
 from tempfile import NamedTemporaryFile
-import base64
-from flask import Blueprint, request, render_template, send_file
+from flask import Blueprint, request, render_template, send_file, session, abort
 
 from chimera import config
 from chimera.data.sample import ctcf
@@ -105,7 +104,7 @@ def index():
         # Create a temporary file for results
         with NamedTemporaryFile(delete=False) as f:
             pd.concat(binding_dataframes, axis=0).to_csv(f.name, index=False)
-            result_filename = base64.encodebytes(f.name.encode('utf8')).decode('utf8')
+            session['result_filename'] = f.name
 
     data_plotly = json.dumps(data_plotly, cls=plotly.utils.PlotlyJSONEncoder)
 
@@ -125,12 +124,13 @@ def index():
         data_plotly=data_plotly,
         seq=seq_text,
         sample_seq=ctcf,
-        algorithm=algorithm,
-        result_filename=result_filename
+        algorithm=algorithm
     )
 
 
-@bp.route('/seq_results/<filename>')
-def seq_results(filename):
-    filename = base64.decodebytes(filename.encode('utf8')).decode('utf8')
-    return send_file(filename ,as_attachment=True, attachment_filename='results.csv')
+@bp.route('/seq_results')
+def seq_results():
+    try:
+        return send_file(session['result_filename'], as_attachment=True, attachment_filename='results.csv')
+    except:  # nopep8
+        abort(404)

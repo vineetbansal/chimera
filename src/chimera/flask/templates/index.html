@@ -141,11 +141,11 @@
               <div class="card-body">
                   {% if n_graphs_discarded > 0 %}
                       <div class="alert alert-warning" role="alert">
-                          Only displaying the first {{ max_graphs }} graphs. Please <a href="{{ url_for('web.seq_results', filename=result_filename) }}">download</a> the data to get complete results.
+                          Only displaying the first {{ max_graphs }} graphs. Please <a href="{{ url_for('web.seq_results') }}">download</a> the data to get complete results.
                       </div>
                   {% else %}
                       <div class="alert alert-success" role="alert">
-                          Please <a href="{{ url_for('web.seq_results', filename=result_filename) }}">download</a> the data to get complete results.
+                          Please <a href="{{ url_for('web.seq_results') }}">download</a> the data to get complete results.
                       </div>
                   {% endif %}
                   <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>

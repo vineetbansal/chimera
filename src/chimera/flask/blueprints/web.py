@@ -1,3 +1,4 @@
+import os.path
 import logging
 import pandas as pd
 import json
@@ -60,7 +61,6 @@ def index():
     n_graphs_discarded = 0
     max_sequences = config.web.max_sequences
     max_graphs = config.web.max_graphs
-    result_filename = ''
 
     if request.method == 'POST':
         seq_file_text = request.files['seqFile'].read().decode('utf8')
@@ -134,3 +134,25 @@ def seq_results():
         return send_file(session['result_filename'], as_attachment=True, attachment_filename='results.csv')
     except:  # nopep8
         abort(404)
+
+
+@bp.route('/data')
+def data():
+    s = ''
+    data_path = request.args.get('path', '/data')
+    s += '<br/>Data Path=' + data_path
+    try:
+        files = os.listdir(data_path)
+        s += '<br/>No of files=' + str(len(files))
+        for file in files:
+            s += '<br/>' + str(file)
+    except Exception as e:
+        s += '<br/>' + str(e)
+
+    try:
+        x = open(os.path.join(data_path, 'greeting.txt'), 'r').read()
+        s += '<br/>Greeting=' + str(x)
+    except Exception as e:
+        s += '<br/>' + str(e)
+
+    return s

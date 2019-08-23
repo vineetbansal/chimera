@@ -35,6 +35,23 @@
     "min_achieved_precision": 0.5,
     "max_sequences": 20,
     "max_graphs": 5
+  },
+
+  "dirs": {
+    "data": {
+      "pfam": "{CHIMERA_DIRS_DATA_PFAM}"
+    },
+    "bin": {
+      "hmmr": "{CHIMERA_DIRS_BIN_HMMR}",
+      "dpuc2": "{CHIMERA_DIRS_BIN_DPUC2}"
+    }
+  },
+
+  "files": {
+    "data": {
+      "dpuc2_net": "{CHIMERA_FILES_DATA_DPUC2_NET}"
+    }
   }
+
 
 }

@@ -1,4 +1,4 @@
-__version__ = "0.1.12"
+from .version import version as __version__
 
 
 import os
@@ -12,6 +12,9 @@ from importlib.resources import read_text, path
 import chimera
 import chimera.data
 
+from chimera.exceptions import handle_exception
+import sys
+sys.excepthook = handle_exception
 
 logger = logging.getLogger(__name__)
 

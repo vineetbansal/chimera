@@ -1,7 +1,12 @@
 from unittest import TestCase
+from importlib.resources import read_text
 
+from chimera.utils import parse_fasta
 from chimera.core.hmmr import find_hmmr_domains_web
-from chimera.data.sample import ctcf
+
+
+ctcf = read_text('chimera.data.sample', 'ctcf.fa')
+ctcf = str(parse_fasta(ctcf)[0].seq)
 
 
 class HmmrWebTestCase(TestCase):

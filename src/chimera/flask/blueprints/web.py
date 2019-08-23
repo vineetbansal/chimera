@@ -4,10 +4,10 @@ import pandas as pd
 import json
 import plotly
 from tempfile import NamedTemporaryFile
+from importlib.resources import read_text
 from flask import Blueprint, request, render_template, send_file, session, abort
 
 from chimera import config
-from chimera.data.sample import ctcf
 from chimera.utils import parse_fasta
 from chimera.core import query
 from chimera.plots import binding_freq_plot_data_domain, binding_freq_plot_data_sequence
@@ -16,9 +16,17 @@ bp = Blueprint('web', __name__)
 logger = logging.getLogger(__name__)
 
 
+ctcf = read_text('chimera.data.sample', 'ctcf.fa')
+
+
 @bp.route('/dsprint')
 def dsprint():
     return render_template('dsprint.html')
+
+
+@bp.route('/dpuc2')
+def dpuc2():
+    return render_template('dpuc2.html')
 
 
 @bp.route('/interacdome', methods=['GET', 'POST'])
@@ -63,12 +71,19 @@ def index():
     max_graphs = config.web.max_graphs
 
     if request.method == 'POST':
+
         seq_file_text = request.files['seqFile'].read().decode('utf8')
-        algorithm = request.form['algorithmSelect']
         if seq_file_text:
             seq_text = seq_file_text
         else:
             seq_text = request.form['seqTextArea']
+        domain_algorithm = request.form['algorithm0Select']
+        algorithm = request.form['algorithm1Select']
+
+        if domain_algorithm == 'dPUC2':
+            from chimera.dpuc2 import Dpuc2
+            s = Dpuc2().run_scan(seq_text)
+            return "<div style=\"white-space: pre-wrap; font-family:monospace;\">" + s + "</div>"
 
         sequences = parse_fasta(seq_text)
         n_sequences_discarded = max(0, len(sequences)-max_sequences)

@@ -32,15 +32,7 @@ def seq_to_matchstates(seq, start, end):
     return match_states, seq_indices
 
 
-def query(sequence, algorithm='dSPRINT'):
-    """
-    Find out binding frequency data suitable for display on the site
-    :param sequence: String of Protein sequence of length L
-    :param algorithm: One of 'dSPRINT' or 'InteracDome' (case-sensitive)
-    :return: A 2-tuple of values
-        0: DataFrame containing Hmmer matches
-        1: DataFrame containing Ligand-binding frequency data
-    """
+def domain_table(sequence):
     hits = find_hmmr_domains_web(sequence)
 
     results = []  # A list-of-dicts that we'll convert to a DataFrame
@@ -61,6 +53,19 @@ def query(sequence, algorithm='dSPRINT'):
             })
 
     domains = pd.DataFrame(results)
+    return domains
+
+
+def query(sequence, algorithm='dSPRINT'):
+    """
+    Find out binding frequency data suitable for display on the site
+    :param sequence: String of Protein sequence of length L
+    :param algorithm: One of 'dSPRINT' or 'InteracDome' (case-sensitive)
+    :return: A 2-tuple of values
+        0: DataFrame containing Hmmer matches
+        1: DataFrame containing Ligand-binding frequency data
+    """
+    domains = domain_table(sequence)
 
     # TODO - if present in df_bp['pfam_id'].unique()
     # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)

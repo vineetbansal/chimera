@@ -12,7 +12,7 @@
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
         $('#aSample').click(function(event) {
-            $('#seqTextArea').text(">ctcf\n{{ sample_seq }}");
+            $('#seqTextArea').text("{{ sample_seq | replace("\n", "\\n") | safe}}");
         });
 
         var data = {{ data_plotly | safe }};
@@ -65,13 +65,23 @@
                           <input type="file" class="form-control-file" id="seqFile" name="seqFile">
                       </div>
                       <div class="form-group">
-                          <label for="algorithmSelect">Algorithm</label>
-                          <select id="algorithmSelect" name="algorithmSelect" aria-describedby="algorithmSelectHelpBlock">
+                          <label for="algorithm0Select">Domain Identification Algorithm</label>
+                          <select id="algorithm0Select" name="algorithm0Select" aria-describedby="algorithm0SelectHelpBlock">
+                              <option selected="selected" value="Hmmer">Hmmer</option>
+                              <option value="dPUC2">dPUC2</option>
+                          </select>
+                          <small id="algorithm0SelectHelpBlock" class="form-text text-muted">
+                              <a href="http://hmmer.org/" target="_blank">Hmmer</a> and <a href="http://www.viiia.org/dpuc2/" target="_blank">dPUC2</a> approaches to domain selection are supported.
+                          </small>
+                      </div>
+                      <div class="form-group">
+                          <label for="algorithm1Select">Ligand-Protein Binding Freq. Algorithm</label>
+                          <select id="algorithm1Select" name="algorithm1Select" aria-describedby="algorithm1SelectHelpBlock">
                               <option selected="selected" value="dSPRINT">dSPRINT</option>
                               <option value="InteracDome">InteracDome</option>
                           </select>
-                          <small id="algorithmSelectHelpBlock" class="form-text text-muted">
-                              The site supports <a href="{{ url_for('web.dsprint') }}">dSPRINT</a> and <a href="{{ url_for('web.interacdome') }}">InteracDome</a>
+                          <small id="algorithm1SelectHelpBlock" class="form-text text-muted">
+                              The site supports <a href="{{ url_for('web.dsprint') }}" target="_blank">dSPRINT</a> and <a href="{{ url_for('web.interacdome') }}" target="_blank">InteracDome</a>
                               algorithms for determining ligand-binding frequencies.
                           </small>
                       </div>

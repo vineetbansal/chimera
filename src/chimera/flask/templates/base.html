@@ -32,6 +32,9 @@
           <li class="nav-item {% if request.endpoint == 'web.interacdome' %}active{% endif %}">
             <a class="nav-link" href="{{ url_for('web.interacdome') }}">InteracDome</a>
           </li>
+          <li class="nav-item {% if request.endpoint == 'web.dpuc2' %}active{% endif %}">
+            <a class="nav-link" href="{{ url_for('web.dpuc2') }}">dPuc2</a>
+          </li>
           <li class="nav-item {% if request.endpoint == 'web.faqs' %}active{% endif %}">
             <a class="nav-link" href="{{ url_for('web.faqs') }}">FAQs</a>
           </li>

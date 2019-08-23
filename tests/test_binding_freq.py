@@ -1,6 +1,11 @@
 from unittest import TestCase
-from chimera.data.sample import ctcf
+from importlib.resources import read_text
+
+from chimera.utils import parse_fasta
 from chimera.core import seq_to_matchstates
+
+ctcf = read_text('chimera.data.sample', 'ctcf.fa')
+ctcf = str(parse_fasta(ctcf)[0].seq)
 
 
 class BindingSeqTestCase(TestCase):

@@ -29,7 +29,7 @@ def find_hmmr_domains_web(sequence):
             aliaseq
     """
 
-    r = requests.post(
+    response = requests.post(
         'https://www.ebi.ac.uk/Tools/hmmer/search/hmmscan',
         headers={'Content-type': 'application/json', 'Accept': 'application/json'},
         data=json.dumps({
@@ -37,10 +37,12 @@ def find_hmmr_domains_web(sequence):
             'cut_ga': True,
             'seq': sequence
         }),
-    ).json()
+    )
+
+    d = response.json()
     logger.info('Hmmr Web API response obtained')
 
-    hits = r['results']['hits']
+    hits = d['results']['hits']
     return hits
 
 

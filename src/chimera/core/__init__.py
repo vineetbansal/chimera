@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from chimera import binding_frequencies_interacdome, binding_frequencies_dsprint
-from chimera.core.hmmr import find_hmmr_domains_web
+from chimera.core.domain import HmmerDomainFinder, HmmerWebDomainFinder, Dpuc2DomainFinder
 
 logger = logging.getLogger(__name__)
 
@@ -32,51 +32,29 @@ def seq_to_matchstates(seq, start, end):
     return match_states, seq_indices
 
 
-def domain_table(sequence):
-    hits = find_hmmr_domains_web(sequence)
-
-    results = []  # A list-of-dicts that we'll convert to a DataFrame
-    for hit in hits:
-        for d in hit['domains']:
-            pfam_name = d['alihmmacc'][:7] + '_' + d['alihmmname']  # TODO: Why this strange clipping of names?
-            results.append({
-                'pfam_domain': pfam_name,
-                'target_start': int(d['alisqfrom']),
-                'target_end': int(d['alisqto']),
-                'hmm_start': int(d['alihmmfrom']),
-                'hmm_end': int(d['alihmmto']),
-                'domain_length': int(d['aliM']),
-                'bit_score': float(d['bitscore']),
-                'reported': bool(d['is_reported']),
-                'e_value': float(d['ievalue']),
-                'aliseq': d['aliaseq'],
-            })
-
-    domains = pd.DataFrame(results)
-    return domains
-
-
-def query(sequence, algorithm='dSPRINT'):
+def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
     """
     Find out binding frequency data suitable for display on the site
-    :param sequence: String of Protein sequence of length L
-    :param algorithm: One of 'dSPRINT' or 'InteracDome' (case-sensitive)
+    :param sequence: A list of Bio.SeqRecord.SeqRecord objects
+    :param algorithm: Ligand-binding algorithm (case-sensitive). One of:
+        dsprint
+        interacdome
+    :param domain_algorithm: Domain-finding algorithm (case-sensitive). One of:
+        hmmer
+        hmmerweb
+        dpuc2
     :return: A 2-tuple of values
         0: DataFrame containing Hmmer matches
         1: DataFrame containing Ligand-binding frequency data
     """
-    domains = domain_table(sequence)
 
-    # TODO - if present in df_bp['pfam_id'].unique()
-    # TODO - Should be same as one in interacdome_allresults (and thus binding_frequencies_*.csv)
-    domains['interacdome'] = False
+    domain_finder = {
+        'hmmer': HmmerDomainFinder,
+        'hmmerweb': HmmerWebDomainFinder,
+        'dpuc2': Dpuc2DomainFinder
+    }[domain_algorithm]()
 
-    domains = domains[(
-        domains['bit_score'] > 0) &
-        (domains['hmm_start'] == 1) &
-        (domains['hmm_end'] == domains['domain_length'])
-    ]
-    logger.info(f'After filtering, obtained {len(domains)} domain results from Hmmr.')
+    domains = domain_finder.domain_table(sequences)
 
     domains[['match_states', 'seq_indices']] = domains.apply(
         lambda row: pd.Series(seq_to_matchstates(row.aliseq, row.target_start, row.target_end)),
@@ -85,14 +63,20 @@ def query(sequence, algorithm='dSPRINT'):
     logger.info('Added match state and sequence index information to results')
 
     match_rows = []
-    for pfam_domain, _df in domains.groupby('pfam_domain'):
+    for (query_id, pfam_domain), _df in domains.groupby(['query_id', 'pfam_domain']):
         for _, row in _df.iterrows():
             for match_i, seq_i in zip(row.match_states, row.seq_indices):
-                match_rows.append({'pfam_domain': pfam_domain, 'match_i': match_i, 'seq_i': seq_i})
+                match_rows.append({'query_id': query_id, 'pfam_domain': pfam_domain, 'match_i': match_i, 'seq_i': seq_i})
     matches = pd.DataFrame(match_rows)
     logger.info('Created an unpivoted match/sequence table of domain results')
 
-    binding_frequencies = binding_frequencies_interacdome if algorithm == 'InteracDome' else binding_frequencies_dsprint
+    if algorithm == 'interacdome':
+        binding_frequencies = binding_frequencies_interacdome
+    elif algorithm == 'dsprint':
+        binding_frequencies = binding_frequencies_dsprint
+    else:
+        raise RuntimeError('Unsupported ligand frequency algorithm')
+
     df = pd.merge(matches, binding_frequencies, left_on=['pfam_domain', 'match_i'], right_on=['pfam_id', 'match_state'])
     logger.info('Merged domain results / binding frequency dataFrames')
 

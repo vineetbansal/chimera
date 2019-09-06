@@ -5,6 +5,7 @@ import json
 import plotly
 from tempfile import NamedTemporaryFile
 from importlib.resources import read_text
+from concurrent import futures
 from flask import Blueprint, request, render_template, send_file, session, abort
 
 from chimera import config
@@ -60,7 +61,7 @@ def index():
     data_plotly = []
     algorithm = ''
     seq_text = ''
-    df = None
+    domain_dataframe = None
     n_hits = 0
 
     n_sequences = 0
@@ -80,11 +81,6 @@ def index():
         domain_algorithm = request.form['algorithm0Select']
         algorithm = request.form['algorithm1Select']
 
-        if domain_algorithm == 'dPUC2':
-            from chimera.dpuc2 import Dpuc2
-            s = Dpuc2().run_scan(seq_text)
-            return "<div style=\"white-space: pre-wrap; font-family:monospace;\">" + s + "</div>"
-
         sequences = parse_fasta(seq_text)
         n_sequences_discarded = max(0, len(sequences)-max_sequences)
         if n_graphs_discarded > 0:
@@ -93,32 +89,18 @@ def index():
         n_graphs_discarded = max(0, n_sequences-max_graphs)
         n_graphs = n_sequences - n_graphs_discarded
 
-        domain_dataframes = []
-        binding_dataframes = []
+        domain_dataframe, binding_dataframe = query(sequences, algorithm=algorithm, domain_algorithm=domain_algorithm)
+
         for i, sequence in enumerate(sequences):
-            seq_name = sequence.name
-            seq = str(sequence.seq)
-
-            domain_dataframe, binding_dataframe = query(seq, algorithm)
-
-            domain_dataframe['seq_index'] = i + 1
-            domain_dataframe['seq_name'] = seq_name
-            domain_dataframes.append(domain_dataframe)
-
-            binding_dataframe['seq_index'] = i + 1
-            binding_dataframe['seq_name'] = seq_name
-            binding_dataframes.append(binding_dataframe)
-
             if i < n_graphs:
-                bars = binding_freq_plot_data_sequence(seq, binding_dataframe)
-                data_plotly.append({'bars': bars, 'seq_index': i + 1, 'seq_name': seq_name})
+                bars = binding_freq_plot_data_sequence(str(sequence.seq), binding_dataframe)
+                data_plotly.append({'bars': bars, 'seq_index': i + 1, 'seq_name': sequence.name})
 
-        df = pd.concat(domain_dataframes, axis=0)
-        n_hits = len(df)
+        n_hits = len(domain_dataframe)
 
         # Create a temporary file for results
         with NamedTemporaryFile(delete=False) as f:
-            pd.concat(binding_dataframes, axis=0).to_csv(f.name, index=False)
+            binding_dataframe.to_csv(f.name, index=False)
             session['result_filename'] = f.name
 
     data_plotly = json.dumps(data_plotly, cls=plotly.utils.PlotlyJSONEncoder)
@@ -135,7 +117,7 @@ def index():
         max_sequences=max_sequences,
         max_graphs=max_graphs,
 
-        df=df,
+        df=domain_dataframe,
         data_plotly=data_plotly,
         seq=seq_text,
         sample_seq=ctcf,

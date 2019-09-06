@@ -67,8 +67,9 @@
                       <div class="form-group">
                           <label for="algorithm0Select">Domain Identification Algorithm</label>
                           <select id="algorithm0Select" name="algorithm0Select" aria-describedby="algorithm0SelectHelpBlock">
-                              <option selected="selected" value="Hmmer">Hmmer</option>
-                              <option value="dPUC2">dPUC2</option>
+                              <option selected="selected" value="hmmer">Hmmer</option>
+                              <option value="hmmerweb">Hmmer (Web API)</option>
+                              <option value="dpuc2">dPUC2</option>
                           </select>
                           <small id="algorithm0SelectHelpBlock" class="form-text text-muted">
                               <a href="http://hmmer.org/" target="_blank">Hmmer</a> and <a href="http://www.viiia.org/dpuc2/" target="_blank">dPUC2</a> approaches to domain selection are supported.
@@ -77,8 +78,8 @@
                       <div class="form-group">
                           <label for="algorithm1Select">Ligand-Protein Binding Freq. Algorithm</label>
                           <select id="algorithm1Select" name="algorithm1Select" aria-describedby="algorithm1SelectHelpBlock">
-                              <option selected="selected" value="dSPRINT">dSPRINT</option>
-                              <option value="InteracDome">InteracDome</option>
+                              <option selected="selected" value="dsprint">dSPRINT</option>
+                              <option value="interacdome">InteracDome</option>
                           </select>
                           <small id="algorithm1SelectHelpBlock" class="form-text text-muted">
                               The site supports <a href="{{ url_for('web.dsprint') }}" target="_blank">dSPRINT</a> and <a href="{{ url_for('web.interacdome') }}" target="_blank">InteracDome</a>
@@ -108,8 +109,7 @@
                   <table id="tbl" class="table">
                       <thead>
                       <tr>
-                          <th>seq_index</th>
-                          <th>seq_name</th>
+                          <th>query_id</th>
                           <th>pfam_domain</th>
                           <th>bit_score</th>
                           <th>domain_length</th>
@@ -123,8 +123,7 @@
                       <tbody>
                       {% for i, row in df.iterrows() %}
                           <tr>
-                          <td>{{ row.seq_index }}</td>
-                          <td>{{ row.seq_name }}</td>
+                          <td>{{ row.query_id }}</td>
                           <td>{{ row.pfam_domain }}</td>
                           <td>{{ row.bit_score }}</td>
                           <td>{{ row.domain_length }}</td>

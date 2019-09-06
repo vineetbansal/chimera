@@ -28,6 +28,13 @@ COPY environment.yml $APP_DIR
 WORKDIR $APP_DIR
 RUN ["conda", "env", "create", "-f", "environment.yml"]
 
+# dPuc2 installation
+# Configure cpan for first use
+RUN ["/bin/bash", "-c", "echo | cpan"]
+RUN ["/bin/bash", "-c", "cpan install Inline::C"]
+RUN ["git", "clone", "https://github.com/alexviiia/dpuc2.git", "/dpuc2"]
+RUN ["git", "clone", "https://github.com/alexviiia/dpuc2-data.git", "/dpuc2-data"]
+
 COPY setup.py $APP_DIR
 COPY app.py $APP_DIR
 COPY MANIFEST.in $APP_DIR
@@ -35,13 +42,6 @@ COPY src $APP_DIR/src/
 COPY tests $APP_DIR/tests/
 
 RUN ["/bin/bash", "-c", "source activate chimera && python setup.py install"]
-
-# dPuc2 installation
-# Configure cpan for first use
-RUN ["/bin/bash", "-c", "echo | cpan"]
-RUN ["/bin/bash", "-c", "cpan install Inline::C"]
-RUN ["git", "clone", "https://github.com/alexviiia/dpuc2.git", "/dpuc2"]
-RUN ["git", "clone", "https://github.com/alexviiia/dpuc2-data.git", "/dpuc2-data"]
 
 RUN echo "source activate chimera" > ~/.bashrc
 ENV PATH /opt/conda/envs/chimera/bin:$PATH

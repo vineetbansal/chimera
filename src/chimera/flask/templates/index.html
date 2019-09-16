@@ -15,26 +15,12 @@
             $('#seqTextArea').text("{{ sample_seq | replace("\n", "\\n") | safe}}");
         });
 
-        var data = {{ data_plotly | safe }};
+        var data = JSON.parse('{{ data_plotly | safe }}');
+
         $.each(data , function(index, bars_data) {
           var div_id = "bargraph" + index;
           $('#bargraphs').append("<div class='chart' id='"+div_id+"'></div>");
-            var layout = {
-              title: {
-                text:bars_data.seq_name + ' - Domain inferred binding frequencies (' + '{{ algorithm }}' + ')'
-              },
-              xaxis: {
-                title: {
-                  text: 'Sequence Position'
-                }
-              },
-              yaxis: {
-                title: {
-                  text: 'Binding Frequency'
-                }
-              }
-            };
-          Plotly.plot(div_id, bars_data.bars, layout);
+          Plotly.plot(div_id, bars_data.data, bars_data.layout);
         });
 
          var table = $('#tbl').DataTable({"searching": false});
@@ -67,9 +53,9 @@
                       <div class="form-group">
                           <label for="algorithm0Select">Domain Identification Algorithm</label>
                           <select id="algorithm0Select" name="algorithm0Select" aria-describedby="algorithm0SelectHelpBlock">
-                              <option selected="selected" value="hmmer">Hmmer</option>
-                              <option value="hmmerweb">Hmmer (Web API)</option>
-                              <option value="dpuc2">dPUC2</option>
+                              <option {% if domain_algorithm=="hmmer" %}selected="selected"{% endif %} value="hmmer">Hmmer</option>
+                              <option {% if domain_algorithm=="hmmerweb" %}selected="selected"{% endif %} value="hmmerweb">Hmmer (Web API)</option>
+                              <option {% if domain_algorithm=="dpuc2" %}selected="selected"{% endif %} value="dpuc2">dPUC2</option>
                           </select>
                           <small id="algorithm0SelectHelpBlock" class="form-text text-muted">
                               <a href="http://hmmer.org/" target="_blank">Hmmer</a> and <a href="http://www.viiia.org/dpuc2/" target="_blank">dPUC2</a> approaches to domain selection are supported.
@@ -78,12 +64,21 @@
                       <div class="form-group">
                           <label for="algorithm1Select">Ligand-Protein Binding Freq. Algorithm</label>
                           <select id="algorithm1Select" name="algorithm1Select" aria-describedby="algorithm1SelectHelpBlock">
-                              <option selected="selected" value="dsprint">dSPRINT</option>
-                              <option value="interacdome">InteracDome</option>
+                              <option {% if algorithm=="dsprint" %}selected="selected"{% endif %} value="dsprint">dSPRINT</option>
+                              <option {% if algorithm=="interacdome" %}selected="selected"{% endif %} value="interacdome">InteracDome</option>
                           </select>
                           <small id="algorithm1SelectHelpBlock" class="form-text text-muted">
                               The site supports <a href="{{ url_for('web.dsprint') }}" target="_blank">dSPRINT</a> and <a href="{{ url_for('web.interacdome') }}" target="_blank">InteracDome</a>
                               algorithms for determining ligand-binding frequencies.
+                          </small>
+                      </div>
+                      <div class="form-group">
+                          <label for="emailaddress">Email Address</label>
+                          <input type="text" name="emailaddress" value="{{ email_address }}"/>
+                          <small id="emailaddressHelpBlock" class="form-text text-muted">
+                              An optional email address where you would like ProtDomain to send you results.<br/>
+                              <strong>Required</strong> for more than {{ max_sequences_interactive }} sequences, as
+                              your job will be queued for processing on the server.
                           </small>
                       </div>
 
@@ -94,75 +89,92 @@
         </div>
     </div>
 
-    {% if n_hits > 0 %}
-    <div class="row my-4">
-        <div class="col">
-            <div class="card">
-              <h5 class="card-header">Domain Hits</h5>
-              <div class="card-body">
-                  {% if n_sequences_discarded >0 %}
-                      <div class="alert alert-warning" role="alert">
-                        Detected {{ max_sequences+n_sequences_discarded }} sequences in your input.
-                          The maximum no. of sequences allowed is {{ max_sequences }}. Discarding {{ n_sequences_discarded }}.
-                      </div>
-                  {% endif %}
-                  <table id="tbl" class="table">
-                      <thead>
-                      <tr>
-                          <th>query_id</th>
-                          <th>pfam_domain</th>
-                          <th>bit_score</th>
-                          <th>domain_length</th>
-                          <th>e_value</th>
-                          <th>hmm_start</th>
-                          <th>hmm_end</th>
-                          <th>target_start</th>
-                          <th>target_end</th>
-                      </tr>
-                      </thead>
-                      <tbody>
-                      {% for i, row in df.iterrows() %}
-                          <tr>
-                          <td>{{ row.query_id }}</td>
-                          <td>{{ row.pfam_domain }}</td>
-                          <td>{{ row.bit_score }}</td>
-                          <td>{{ row.domain_length }}</td>
-                          <td>{{ row.e_value }}</td>
-                          <td>{{ row.hmm_start }}</td>
-                          <td>{{ row.hmm_end }}</td>
-                          <td>{{ row.target_start }}</td>
-                          <td>{{ row.target_end }}</td>
-                          </tr>
-                      {% endfor %}
-                      </tbody>
-                  </table>
-              </div>
+    {% if error_msg != '' %}
+
+        <div class="row my-4">
+            <div class="col">
+                <div class="card">
+                  <div class="card-body">
+                    <div class="alert alert-danger" role="alert">{{ error_msg }}</div>
+                  </div>
+                </div>
             </div>
         </div>
-    </div>
-    {% endif %}
 
-    {% if n_graphs > 0 %}
-    <div class="row my-4">
-        <div class="col">
-            <div class="card">
-              <h5 class="card-header">Domain-inferred binding frequencies across sequence positions</h5>
-              <div class="card-body">
-                  {% if n_graphs_discarded > 0 %}
-                      <div class="alert alert-warning" role="alert">
-                          Only displaying the first {{ max_graphs }} graphs. Please <a href="{{ url_for('web.seq_results') }}">download</a> the data to get complete results.
-                      </div>
-                  {% else %}
+    {% elif job_id != '' %}
+        <div class="row my-4">
+            <div class="col">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="alert alert-success" role="alert">
+                            Your sequence(s) have been queued for processing. Your job id is <b>{{ job_id }}</b>.
+                            Once processing is complete, results will be sent out to <b>{{ email_address }}</b>.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    {% else %}
+
+        {% if n_hits > 0 %}
+        <div class="row my-4">
+            <div class="col">
+                <div class="card">
+                  <h5 class="card-header">Domain Hits</h5>
+                  <div class="card-body">
+                      <table id="tbl" class="table">
+                          <thead>
+                          <tr>
+                              <th>query_id</th>
+                              <th>pfam_domain</th>
+                              <th>bit_score</th>
+                              <th>domain_length</th>
+                              <th>e_value</th>
+                              <th>hmm_start</th>
+                              <th>hmm_end</th>
+                              <th>target_start</th>
+                              <th>target_end</th>
+                          </tr>
+                          </thead>
+                          <tbody>
+                          {% for i, row in df.iterrows() %}
+                              <tr>
+                              <td>{{ row.query_id }}</td>
+                              <td>{{ row.pfam_domain }}</td>
+                              <td>{{ row.bit_score }}</td>
+                              <td>{{ row.domain_length }}</td>
+                              <td>{{ row.e_value }}</td>
+                              <td>{{ row.hmm_start }}</td>
+                              <td>{{ row.hmm_end }}</td>
+                              <td>{{ row.target_start }}</td>
+                              <td>{{ row.target_end }}</td>
+                              </tr>
+                          {% endfor %}
+                          </tbody>
+                      </table>
+                  </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row my-4">
+            <div class="col">
+                <div class="card">
+                  <h5 class="card-header">Domain-inferred binding frequencies across sequence positions</h5>
+                  <div class="card-body">
                       <div class="alert alert-success" role="alert">
                           Please <a href="{{ url_for('web.seq_results') }}">download</a> the data to get complete results.
                       </div>
-                  {% endif %}
-                  <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>
-                  <div id="bargraphs"></div>
-              </div>
+                      <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>
+                      <div id="bargraphs"></div>
+                  </div>
+                </div>
             </div>
         </div>
-    </div>
+
+        {% endif %}
+
     {% endif %}
 
 </div>

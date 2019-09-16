@@ -35,7 +35,7 @@ def seq_to_matchstates(seq, start, end):
 def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
     """
     Find out binding frequency data suitable for display on the site
-    :param sequence: A list of Bio.SeqRecord.SeqRecord objects
+    :param sequences: A list of Bio.SeqRecord.SeqRecord objects
     :param algorithm: Ligand-binding algorithm (case-sensitive). One of:
         dsprint
         interacdome

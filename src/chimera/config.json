@@ -33,8 +33,8 @@
     "min_instances": 3,
     "min_structures": 3,
     "min_achieved_precision": 0.5,
-    "max_sequences": 20,
-    "max_graphs": 5
+    "max_sequences": 50,
+    "max_sequences_interactive": 5
   },
 
   "dirs": {
@@ -51,7 +51,19 @@
     "data": {
       "dpuc2_net": "{CHIMERA_FILES_DATA_DPUC2_NET}"
     }
-  }
+  },
 
+  "celery": {
+    "broker": "{CELERY_BROKER}",
+    "backend": "{CELERY_BACKEND}"
+  },
+
+  "mail": {
+    "smtp_server": "{SMTPHOST}",
+    "smtp_port": "{SMTPPORT}",
+    "smtp_username": "{SMTPUSER}",
+    "smtp_password": "{SMTPPASS}",
+    "sender": "ProtDomain <mail@protdomain.com>"
+  }
 
 }

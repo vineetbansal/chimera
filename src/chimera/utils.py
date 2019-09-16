@@ -6,7 +6,15 @@ import pandas as pd
 from io import StringIO
 from Bio import SeqIO
 
+import smtplib
+import ssl
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+
 import chimera.data
+from chimera import config
 
 logger = logging.getLogger(__name__)
 
@@ -135,3 +143,33 @@ def get_full_version():
         return version
     else:
         return f'{version}.{rev}'
+
+
+def email(to, subject, body, attachments=None):
+
+    message = MIMEMultipart()
+    message["From"] = config.mail.sender
+    message["To"] = to
+    message["Subject"] = subject
+
+    message.attach(MIMEText(body, "plain"))
+
+    if attachments is not None:
+        for attachment in attachments:
+            with open(attachment, "rb") as f:
+                part = MIMEBase("application", "octet-stream")
+                part.set_payload(f.read())
+            encoders.encode_base64(part)
+
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename= {os.path.basename(attachment)}",
+            )
+            message.attach(part)
+
+    text = message.as_string()
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(config.mail.smtp_server, int(config.mail.smtp_port), context=context) as server:
+        server.login(config.mail.smtp_username, config.mail.smtp_password)
+        server.sendmail(config.mail.sender, to, text)

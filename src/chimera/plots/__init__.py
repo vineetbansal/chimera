@@ -33,7 +33,7 @@ def binding_freq_plot_data_domain(pfam_id):
     return json.dumps(bars, cls=plotly.utils.PlotlyJSONEncoder)
 
 
-def binding_freq_plot_data_sequence(seq, df):
+def binding_freq_plot_data_sequence(seq, domain_df, df):
 
     sequence_length = len(seq)
     ligand_types = df.ligand_type.unique()
@@ -44,14 +44,28 @@ def binding_freq_plot_data_sequence(seq, df):
         bf = bf.reindex(pd.RangeIndex(1, sequence_length + 1), fill_value=0)
         data[j, :] = bf.values
 
-    bars = []
+    traces = []
     for ligand_type, row in zip(ligand_types, data):
-        bars.append(
+        traces.append(
             go.Bar(
                 x=list(range(1, sequence_length + 1)),
                 y=row,
-                name=ligand_type
+                name=ligand_type,
+                xaxis="x1",
+                yaxis="y1"
             )
         )
 
-    return bars
+    for _, row in domain_df.iterrows():
+        traces.append(
+            go.Box(
+                x=[row.target_start, row.target_end],
+                name="domain",
+                xaxis="x2",
+                yaxis="y2",
+                showlegend=False,
+                hovertemplate="tsup"
+            )
+        )
+
+    return traces

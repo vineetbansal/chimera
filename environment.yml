@@ -15,8 +15,10 @@ dependencies:
   - python=3.7
   - tqdm=4.31.1
   - pip:
+    - celery
     - coveralls
     - plotly
     - prody
     - pytest-cov
+    - redis
     - weblogo

@@ -3,14 +3,12 @@ import logging
 import pandas as pd
 import json
 import plotly
-from tempfile import NamedTemporaryFile
 from importlib.resources import read_text
-from concurrent import futures
 from flask import Blueprint, request, render_template, send_file, session, abort
 
 from chimera import config
 from chimera.utils import parse_fasta
-from chimera.core import query
+from chimera.tasks import query
 from chimera.plots import binding_freq_plot_data_domain, binding_freq_plot_data_sequence
 
 bp = Blueprint('web', __name__)
@@ -58,18 +56,18 @@ def faqs():
 @bp.route('/', methods=['GET', 'POST'])
 def index():
 
+    error_msg = ''
     data_plotly = []
-    algorithm = ''
     seq_text = ''
     domain_dataframe = None
     n_hits = 0
+    algorithm = ''
+    domain_algorithm = ''
+    email_address = ''
 
+    job_id = ''
     n_sequences = 0
-    n_sequences_discarded = 0
-    n_graphs = 0
-    n_graphs_discarded = 0
-    max_sequences = config.web.max_sequences
-    max_graphs = config.web.max_graphs
+    max_sequences_interactive = config.web.max_sequences_interactive
 
     if request.method == 'POST':
 
@@ -80,28 +78,39 @@ def index():
             seq_text = request.form['seqTextArea']
         domain_algorithm = request.form['algorithm0Select']
         algorithm = request.form['algorithm1Select']
+        email_address = request.form['emailaddress'].strip()
 
         sequences = parse_fasta(seq_text)
-        n_sequences_discarded = max(0, len(sequences)-max_sequences)
-        if n_graphs_discarded > 0:
-            sequences = sequences[:-n_sequences_discarded]
         n_sequences = len(sequences)
-        n_graphs_discarded = max(0, n_sequences-max_graphs)
-        n_graphs = n_sequences - n_graphs_discarded
 
-        domain_dataframe, binding_dataframe = query(sequences, algorithm=algorithm, domain_algorithm=domain_algorithm)
+        # parse_fasta seems to parse '' as a single blank sequence!
+        if n_sequences == 0 or str(sequences[0].seq) == '':
+            error_msg = 'No sequence(s) detected.'
+        elif n_sequences > max_sequences_interactive:
+            if not email_address:
+                error_msg = 'Please provide an email address for sending results.'
+            else:
+                job = query.delay(seq_text=seq_text, save_results=True, email_address=email_address, algorithm=algorithm,
+                            domain_algorithm=domain_algorithm)
+                job_id = job.id
+        else:
+            domain_dataframe, binding_dataframe, result_filename = query(sequences=sequences, save_results=True,
+                                                                         email_address=email_address, algorithm=algorithm,
+                                                                         domain_algorithm=domain_algorithm)
+            session['result_filename'] = result_filename
 
-        for i, sequence in enumerate(sequences):
-            if i < n_graphs:
-                bars = binding_freq_plot_data_sequence(str(sequence.seq), binding_dataframe)
-                data_plotly.append({'bars': bars, 'seq_index': i + 1, 'seq_name': sequence.name})
+            for i, sequence in enumerate(sequences):
+                bars = binding_freq_plot_data_sequence(str(sequence.seq), domain_dataframe, binding_dataframe)
+                plotly_dict = {'data': bars, 'seq_index': i + 1, 'seq_name': sequence.name}
+                plotly_dict['layout'] = {
+                    "xaxis": {"anchor": "y"},
+                    "yaxis": {"anchor": "x", "domain": [0.0, 0.8]},
+                    "xaxis2": {"anchor": "y2", "matches": "x"},
+                    "yaxis2": {"anchor": "x2", "domain": [0.8, 1.0]}
+                }
+                data_plotly.append(plotly_dict)
 
-        n_hits = len(domain_dataframe)
-
-        # Create a temporary file for results
-        with NamedTemporaryFile(delete=False) as f:
-            binding_dataframe.to_csv(f.name, index=False)
-            session['result_filename'] = f.name
+            n_hits = len(domain_dataframe)
 
     data_plotly = json.dumps(data_plotly, cls=plotly.utils.PlotlyJSONEncoder)
 
@@ -109,19 +118,19 @@ def index():
         'index.html',
         n_hits=n_hits,
 
-        # For displaying warnings
+        # For displaying warnings/messages
+        error_msg=error_msg,
+        job_id=job_id,
         n_sequences=n_sequences,
-        n_sequences_discarded=n_sequences_discarded,
-        n_graphs=n_graphs,
-        n_graphs_discarded=n_graphs_discarded,
-        max_sequences=max_sequences,
-        max_graphs=max_graphs,
+        max_sequences_interactive=max_sequences_interactive,
 
         df=domain_dataframe,
         data_plotly=data_plotly,
         seq=seq_text,
         sample_seq=ctcf,
-        algorithm=algorithm
+        algorithm=algorithm,
+        domain_algorithm=domain_algorithm,
+        email_address=email_address
     )
 
 
@@ -153,3 +162,4 @@ def data():
         s += '<br/>' + str(e)
 
     return s
+

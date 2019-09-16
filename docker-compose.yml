@@ -1,0 +1,38 @@
+version: '3'
+services:
+  app:
+    container_name: chimera_app
+    build: .
+    image: chimera
+    environment:
+      - SMTPHOST
+      - SMTPPORT
+      - SMTPUSER
+      - SMTPPASS
+      - CELERY_BROKER=redis://chimera_redis
+      - CELERY_BACKEND=redis://chimera_redis
+    ports:
+      - 80:5000
+    depends_on:
+      - celery
+
+  celery:
+    container_name: chimera_celery
+    build: .
+    image: chimera_celery
+    environment:
+      - SMTPHOST
+      - SMTPPORT
+      - SMTPUSER
+      - SMTPPASS
+      - CELERY_BROKER=redis://chimera_redis
+      - CELERY_BACKEND=redis://chimera_redis
+    command: python -m celery worker -l info -A chimera.tasks.app
+    depends_on:
+      - redis
+
+  redis:
+    container_name: chimera_redis
+    image: redis:4.0.5-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+

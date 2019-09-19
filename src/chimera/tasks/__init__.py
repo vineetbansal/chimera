@@ -47,5 +47,5 @@ def query(sequences=None, seq_text=None, save_results=False, email_address=None,
 
     if email_address is not None and email_address.strip():
         email(email_address, f'ProtDomain Results for job {query.request.id}', 'ProtDomain Results are attached.', [result_filename])
-    else:
-        return domains, df, result_filename
+
+    return domains, df, result_filename

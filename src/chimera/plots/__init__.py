@@ -60,11 +60,11 @@ def binding_freq_plot_data_sequence(seq, domain_df, df):
         traces.append(
             go.Box(
                 x=[row.target_start, row.target_end],
-                name="domain",
+                name=row.pfam_domain,
                 xaxis="x2",
                 yaxis="y2",
                 showlegend=False,
-                hovertemplate="tsup"
+                line_width=0
             )
         )
 

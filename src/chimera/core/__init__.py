@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from chimera import binding_frequencies_interacdome, binding_frequencies_dsprint
-from chimera.core.domain import HmmerDomainFinder, HmmerWebDomainFinder, Dpuc2DomainFinder
+from chimera.core.domain import HmmerDomainFinder, HmmerWebDomainFinder, Dpuc2DomainFinder, DomStratStatsDomainFinder
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +43,7 @@ def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
         hmmer
         hmmerweb
         dpuc2
+        domstratstats
     :return: A 2-tuple of values
         0: DataFrame containing Hmmer matches
         1: DataFrame containing Ligand-binding frequency data
@@ -51,7 +52,8 @@ def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
     domain_finder = {
         'hmmer': HmmerDomainFinder,
         'hmmerweb': HmmerWebDomainFinder,
-        'dpuc2': Dpuc2DomainFinder
+        'dpuc2': Dpuc2DomainFinder,
+        'domstratstats': DomStratStatsDomainFinder
     }[domain_algorithm]()
 
     domains = domain_finder.domain_table(sequences)

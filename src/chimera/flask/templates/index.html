@@ -54,11 +54,12 @@
                           <label for="algorithm0Select">Domain Identification Algorithm</label>
                           <select id="algorithm0Select" name="algorithm0Select" aria-describedby="algorithm0SelectHelpBlock">
                               <option {% if domain_algorithm=="hmmer" %}selected="selected"{% endif %} value="hmmer">Hmmer</option>
-                              <option {% if domain_algorithm=="hmmerweb" %}selected="selected"{% endif %} value="hmmerweb">Hmmer (Web API)</option>
+                              <!--<option {% if domain_algorithm=="hmmerweb" %}selected="selected"{% endif %} value="hmmerweb">Hmmer (Web API)</option>-->
                               <option {% if domain_algorithm=="dpuc2" %}selected="selected"{% endif %} value="dpuc2">dPUC2</option>
+                              <option {% if domain_algorithm=="domstratstats" %}selected="selected"{% endif %} value="domstratstats">DomStratStats</option>
                           </select>
                           <small id="algorithm0SelectHelpBlock" class="form-text text-muted">
-                              <a href="http://hmmer.org/" target="_blank">Hmmer</a> and <a href="http://www.viiia.org/dpuc2/" target="_blank">dPUC2</a> approaches to domain selection are supported.
+                              <a href="http://hmmer.org/" target="_blank">Hmmer</a>, <a href="{{ url_for('web.dpuc2') }}">dPuc2</a>, and <a href="{{ url_for('web.domstratstats') }}" target="_blank">DomStratStats</a> approaches to domain selection are supported.
                           </small>
                       </div>
                       <div class="form-group">

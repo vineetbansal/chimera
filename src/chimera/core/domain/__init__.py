@@ -53,3 +53,4 @@ class DomainFinder:
 from . hmmer import HmmerDomainFinder
 from . hmmerweb import HmmerWebDomainFinder
 from . dpuc2 import Dpuc2DomainFinder
+from . domstratstats import DomStratStatsDomainFinder

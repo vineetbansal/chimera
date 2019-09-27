@@ -28,6 +28,11 @@ def dpuc2():
     return render_template('dpuc2.html')
 
 
+@bp.route('/domstratstats')
+def domstratstats():
+    return render_template('domstratstats.html')
+
+
 @bp.route('/interacdome', methods=['GET', 'POST'])
 def interacdome():
     from chimera import df_dl
@@ -104,9 +109,9 @@ def index():
                 plotly_dict = {'data': bars, 'seq_index': i + 1, 'seq_name': sequence.name}
                 plotly_dict['layout'] = {
                     "xaxis": {"anchor": "y"},
-                    "yaxis": {"anchor": "x", "domain": [0.0, 0.8]},
+                    "yaxis": {"anchor": "x", "domain": [0.2, 1.0]},
                     "xaxis2": {"anchor": "y2", "matches": "x"},
-                    "yaxis2": {"anchor": "x2", "domain": [0.8, 1.0]}
+                    "yaxis2": {"anchor": "x2", "domain": [0.0, 0.2]}
                 }
                 data_plotly.append(plotly_dict)
 

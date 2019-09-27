@@ -7,6 +7,8 @@ import logging
 from types import SimpleNamespace
 import json
 import pandas as pd
+from string import Formatter
+from collections import defaultdict
 from importlib.resources import read_text, path
 
 import chimera
@@ -39,15 +41,20 @@ def setup_config():
     # ..
     # For non-string type values, (this include SimpleNamespace type itself), we simply get the value as is,
     # allowing us chained attribute access).
-    try:
-        config = json.loads(
-            s,
-            object_hook=lambda d: SimpleNamespace(
-                **{k: (v.format(**os.environ) if isinstance(v, str) else v) for k, v in d.items()}
-            )
+    # This implementation uses a defaultdict to resolve these format string identifiers, and returns a blank string ''
+    # for any environment variables that are missing
+
+    default_dict = defaultdict(str)
+    for k, v in os.environ.items():
+        default_dict[k] = v
+    fmtr = Formatter()
+
+    config = json.loads(
+        s,
+        object_hook=lambda d: SimpleNamespace(
+            **{k: (fmtr.vformat(v, (), default_dict) if isinstance(v, str) else v) for k, v in d.items()}
         )
-    except KeyError as e:
-        raise RuntimeError(f'Environment variable {e.args[0]} missing')
+    )
 
     return config
 

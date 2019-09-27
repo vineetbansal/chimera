@@ -35,6 +35,9 @@ RUN ["/bin/bash", "-c", "cpan install Inline::C"]
 RUN ["git", "clone", "https://github.com/alexviiia/dpuc2.git", "/dpuc2"]
 RUN ["git", "clone", "https://github.com/alexviiia/dpuc2-data.git", "/dpuc2-data"]
 
+# DomStratStats installation
+RUN ["git", "clone", "https://github.com/alexviiia/DomStratStats.git", "/DomStratStats"]
+
 COPY setup.py $APP_DIR
 COPY app.py $APP_DIR
 COPY MANIFEST.in $APP_DIR
@@ -51,6 +54,7 @@ ENV PATH /opt/conda/envs/chimera/bin:$PATH
 # ----------------------------------
 ENV CHIMERA_DIRS_BIN_DPUC2=/dpuc2
 ENV CHIMERA_FILES_DATA_DPUC2_NET=/dpuc2-data/dpucNet.pfam32.txt.gz
+ENV CHIMERA_DIRS_BIN_DOMSTRATSTATS=/DomStratStats
 # Where apt-get installs hmmr by default
 ENV CHIMERA_DIRS_BIN_HMMR=/usr/bin
 # ----------------------------------

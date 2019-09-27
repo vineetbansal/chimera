@@ -11,12 +11,12 @@ from chimera import config
 logger = logging.getLogger(__name__)
 
 
-class Dpuc2DomainFinder(DomainFinder):
+class DomStratStatsDomainFinder(DomainFinder):
     def find_domains(self, sequences):
         def read_filtered_domtab(filename):
             """
             Read a 'filtered' Hmmer domtab file (i.e. a Hmmer domtab files with arbitrary lines removed) as a dictionary.
-            This is the kind of file that dPUC2 produces as output.
+            This is the kind of file that DomStratStats produces as output.
 
             Unfortunately, Bio.SearchIO is incapable of parsing such a file since it relies too heavily on the lines in the
             domtab file following a certain order (lines sorted by query name, then by target name, then by domain index,
@@ -38,6 +38,13 @@ class Dpuc2DomainFinder(DomainFinder):
             # https://stackoverflow.com/questions/5029934/python-defaultdict-of-defaultdict
             query_dict = defaultdict(lambda: defaultdict(list))
 
+            if not os.path.exists(filename):
+                filename = filename + '.gz'
+                if not os.path.exists(filename):
+                    raise RuntimeError(f'Input file {filename} not found!')
+
+            from smart_open import open
+
             with open(filename, 'r') as f:
                 for line in f.readlines():
                     line = line.strip()
@@ -51,10 +58,19 @@ class Dpuc2DomainFinder(DomainFinder):
 
             return query_dict
 
+        # Since DomStratStats insists on appending '.gz' to filenames and refuses to work
+        # if the corresponding filename (without .gz) already exists, we execute the following statements just to get
+        # some temporary filenames, by creating them and then removing them immediately.
+        # TODO: delete=True can be switched to delete=False once DomStratStats supports a '--noGzip' option like dPuc2
         f_in = NamedTemporaryFile(delete=False)
-        f_intermediate = NamedTemporaryFile(delete=False)
+        f_intermediate1 = NamedTemporaryFile(delete=True)
+        f_intermediate1.close()
+        f_intermediate2 = NamedTemporaryFile(delete=True)
+        f_intermediate2.close()
+        f_out = NamedTemporaryFile(delete=True)
+        f_out.close()
+
         f_alignments = NamedTemporaryFile(delete=False)
-        f_out = NamedTemporaryFile(delete=False)
 
         for sequence in sequences:
             f_in.write(f'>{sequence.name}\n{sequence.seq}\n\n'.encode('utf8'))
@@ -72,14 +88,14 @@ class Dpuc2DomainFinder(DomainFinder):
                 hmmscan_bin,
                 pfam_hmm_path,
                 f_in.name,
-                f_intermediate.name,
+                f_intermediate1.name,
                 f_alignments.name
-            ], cwd=config.dirs.bin.dpuc2, capture_output=True)
+            ], cwd=config.dirs.bin.domstratstats, capture_output=True)
 
             if p1.returncode != 0:
                 raise RuntimeError('Perl execution failed')
 
-            logger.info(f'Wrote dpuc2 hmmscan results to temporary file = {f_intermediate.name}')
+            logger.info(f'Wrote DomStratStats hmmscan results to temporary file = {f_intermediate1.name}')
             logger.info(f'Wrote hmmscan alignments to temporary file = {f_alignments.name}')
 
             """
@@ -113,25 +129,36 @@ class Dpuc2DomainFinder(DomainFinder):
 
             p2 = run([
                 'perl',
-                '1dpuc2.pl',
-                pfam_hmm_dat_path,
-                config.files.data.dpuc2_net,
-                f_intermediate.name,
-                f_out.name,
-                '--noGzip'
-            ], cwd=config.dirs.bin.dpuc2, capture_output=True)
+                '1noOvs.pl',
+                f_intermediate1.name,
+                f_intermediate2.name,
+                pfam_hmm_dat_path
+            ], cwd=config.dirs.bin.domstratstats, capture_output=True)
 
             if p2.returncode != 0:
                 raise RuntimeError('Perl execution failed')
 
-            logger.info(f'Wrote dpuc2 final results to output file = {f_out.name}')
+            logger.info(f'Wrote DomStratStats results to output file = {f_intermediate2.name}')
+
+            p3 = run([
+                'perl',
+                '2domStratStats.pl',
+                f_in.name,
+                f_intermediate2.name,
+                f_out.name
+            ], cwd=config.dirs.bin.domstratstats, capture_output=True)
+
+            if p3.returncode != 0:
+                raise RuntimeError('Perl execution failed')
+
+            logger.info(f'Wrote DomStratStats results to output file = {f_out.name}')
 
             logger.info(f'Obtaining list of dPUC2 hits from output file.')
             final_results = read_filtered_domtab(f_out.name)
 
             results = []
 
-            qresults = SearchIO.parse(f_intermediate.name, format='hmmscan3-domtab')
+            qresults = SearchIO.parse(f_intermediate1.name, format='hmmscan3-domtab')
             for qresult in qresults:
                 for hit in qresult.hits:
                     for hsp in hit.hsps:
@@ -160,8 +187,14 @@ class Dpuc2DomainFinder(DomainFinder):
 
         finally:
             os.unlink(f_in.name)
-            os.unlink(f_intermediate.name)
             os.unlink(f_alignments.name)
-            os.unlink(f_out.name)
+
+            # TODO: This logic can be simplified once DomStratStats supports a '--noGzip' option
+            for f in f_intermediate1, f_intermediate2, f_out:
+                fname = f.name
+                if os.path.exists(fname):
+                    os.unlink(fname)
+                if os.path.exists(fname + '.gz'):
+                    os.unlink(fname + '.gz')
 
         return results

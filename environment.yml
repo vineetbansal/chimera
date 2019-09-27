@@ -21,4 +21,5 @@ dependencies:
     - prody
     - pytest-cov
     - redis
+    - smart_open
     - weblogo

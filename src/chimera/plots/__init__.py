@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import plotly
 import plotly.graph_objs as go
+from plotly.colors import DEFAULT_PLOTLY_COLORS
 
 from chimera import config
 
@@ -18,7 +19,7 @@ def binding_freq_plot_data_domain(pfam_id):
     ]
 
     bars = []
-    for ligand_type in ('ion', 'metabolite', 'sm'):
+    for ligand_type in ('peptide', 'ion', 'metabolite', 'sm', 'dna', 'dnabase', 'dnabackbone', 'rna', 'rnabase', 'rnabackbone'):
         df = df_dl[df_dl.ligand_type == ligand_type]
         if len(df) == 1:
             row = df.iloc[0]
@@ -56,16 +57,25 @@ def binding_freq_plot_data_sequence(seq, domain_df, df):
             )
         )
 
-    for _, row in domain_df.iterrows():
-        traces.append(
-            go.Box(
-                x=[row.target_start, row.target_end],
-                name=row.pfam_domain,
-                xaxis="x2",
-                yaxis="y2",
-                showlegend=False,
-                line_width=0
+    """
+    Box plots to show domains on an x-axis that is aligned with the above x-axis for the bar plot.
+    Note the following choices that affect the box plot behavior.
+    'name': Plotly vertically aligns box plot(s) with distinct 'name' in its own row.
+            We use the same 'name' so that all box plots are in the same line.
+    'line_width': By making this 0, we prevent the 'median' line to be displayed inside each individual box.
+    """
+    for i, (pfam_domain, df) in enumerate(domain_df.groupby('pfam_domain')):
+        for _, row in df.iterrows():
+            traces.append(
+                go.Box(
+                    x=[row.target_start, row.target_end],
+                    name=pfam_domain,
+                    xaxis="x2",
+                    yaxis="y2",
+                    showlegend=False,
+                    line_width=0,
+                    fillcolor=DEFAULT_PLOTLY_COLORS[i % len(DEFAULT_PLOTLY_COLORS)]
+                )
             )
-        )
 
     return traces

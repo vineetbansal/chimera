@@ -75,7 +75,7 @@
                           <label for="pfam_id">Domain (organized by Pfam identifier)</label>
                             <select class="select2" name="pfam_id" class="form-control" style="width: 300px;">
                                 {% for pfam_id in pfam_ids %}
-                                <option value="{{ pfam_id }}">{{ pfam_id }}</option>
+                                <option {% if pfam_id==selected_pfam_id %}selected="selected"{% endif %} value="{{ pfam_id }}">{{ pfam_id }}</option>
                                 {% endfor %}
                             </select>
                       </div>

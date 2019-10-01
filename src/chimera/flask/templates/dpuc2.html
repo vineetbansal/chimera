@@ -1,19 +1,54 @@
 {% extends "base.html" %}
 
 {% block main %}
-<h1>dPuc2</h1>
-<p class="lead">Brief Description for dPuc2</p>
+    <h3>dPUC2</h3>
+    <p class="lead">Domain Prediction Using Context</p>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col">
-
-                <p style="margin-top:1em; font-size:1.15em;">
-                    Details coming soon.
-                </p>
-
+    <div class="container-fluid">
+        <div class="row">
+            <p>
+                The <a href="https://github.com/alexviiia/dpuc2/" target="_blank">dPUC2</a> (Domain Prediction Using
+                Context) software improves domain prediction by considering every
+                domain in the context of other domains, rather than independently as standard approaches do. Our
+                framework maximized the probability of the data under an approximation, which reduces to a pairwise
+                context problem, and we have shown that our probabilistic method is indeed more powerful than competing
+                methods.
+            </p>
+            <p>
+                ProtDomain allows you to use dPUC2 as a Domain Finder for your sequences.
+                dPUC2 is developed and maintained as a Perl application by
+                <a href="https://ochoalab.github.io/" target="_blank">Alejandro Ochoa García</a>,
+                an Assistant Professor at Duke University, and a former student at <a
+                    href="http://compbio.cs.princeton.edu/" target="_blank">SinghLab</a>.
+                To directly install and use dPUC2, please refer to the <a
+                    href="https://github.com/alexviiia/dpuc2/" target="_blank">GitHub repository</a>
+                for dPUC2 which also serves as the software's manual.
+            </p>
         </div>
-    </div>
 
-</div>
+        <div class="row">
+            <div class="col-12">
+                <hr/>
+                <p>2017-04-12.
+                    Alejandro Ochoa, Mona Singh.
+                    Domain prediction with probabilistic directional context.
+                    Bioinf 33(16) 2471-2478.
+                    <a href="http://dx.doi.org/10.1093/bioinformatics/btx221" rel="nofollow">Article</a>,
+                    <a href="http://biorxiv.org/content/early/2016/12/14/094284" rel="nofollow">bioRxiv</a> 2016-12-14.
+                </p>
+                <p>2015-11-17.
+                    Alejandro Ochoa, John D Storey, Manuel Llinás, and Mona Singh.
+                    Beyond the E-value: stratified statistics for protein domain prediction.
+                    PLoS Comput Biol. 11 e1004509.
+                    <a href="http://dx.doi.org/10.1371/journal.pcbi.1004509" rel="nofollow">Article</a>,
+                    <a href="http://arxiv.org/abs/1409.6384" rel="nofollow">arXiv</a> 2014-09-23.</p>
+                <p>2011-03-31.
+                    Alejandro Ochoa, Manuel Llinás, and Mona Singh.
+                    Using context to improve protein domain identification.
+                    BMC Bioinformatics, 12:90.
+                    <a href="http://dx.doi.org/10.1186/1471-2105-12-90" rel="nofollow">Article</a>.</p>
+            </div>
+        </div>
+
+    </div>
 {% endblock %}

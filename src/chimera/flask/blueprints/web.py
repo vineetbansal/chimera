@@ -53,9 +53,9 @@ def interacdome():
     return render_template('interacdome.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
 
 
-@bp.route('/faqs')
-def faqs():
-    return render_template('faqs.html')
+@bp.route('/interacdome_faq')
+def interacdome_faq():
+    return render_template('interacdome_faq.html')
 
 
 @bp.route('/', methods=['GET', 'POST'])

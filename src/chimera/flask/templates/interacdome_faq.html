@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block main %}
+
+    <h3>InteracDome</h3>
+    <h4>Frequently Asked Questions</h4>
+
+    <h5>Q1: How do I use InteracDome?</h5>
+    <p>InteracDome, like <a href="http://pfam.xfam.org/" target="_blank">Pfam</a>, is primarily a <i>domain</i>
+        database, not a sequence nor structure database. As such, we invite you to search for a domain by Pfam name or
+        identifier on the homepage to find how positions within that domain interact with various ligand types, if at
+        all. The resulting values displayed on the main InteracDome page are "binding frequencies", which are described
+        in the
+        response to the next question.</p>
+    <p>You also have the ability to query a protein sequence for instances of InteracDome domains in order to determine
+        which positions within your sequence have some domain-based evidence of binding various ligands. This
+        functionality is available under the "Query by Sequence" tab.</p>
+
+    <h5>Q2: What is a "binding frequency"?</h5>
+    <p>The "binding frequency" of a position within a domain corresponds to the (weighted) fraction of times that
+        position was found to be in contact with a particular ligand across structural instances. Specifically, a
+        residue at a given protein position is "in contact" with a ligand if a non-hydrogen atom from its side chain is
+        within 3.6 Å of a ligand in a crystal structure. Different structural instances are weighted according to the
+        relative uniqueness of their sequence, where structures with highly similar sequences are down-weighted and
+        those with more unique sequences are up-weighted. Binding frequency is marked along the y-axis of the plots
+        generated on the home page.</p>
+
+    <h5>Q3: How can I finding binding sites in my sequence?</h5>
+    <p>We have not currently implemented a search by sequence name or identifier . However, you can obtain the amino
+        acid sequence for your sequence of interest through UniProt, Ensembl, and/or other databases. Copy and paste the
+        sequence into the box on the "Query by Sequence" page and click "Go". This will return a list of Pfam domains
+        found in your sequence and, if applicable, corresponding binding frequency values annotated to your sequence. In
+        addition, we have provided some sample input by protein name on the same page</p>
+
+    <h5>Q4: How can I search using a PDB sequence?</h5>
+    <p>If you are interested in finding domain matches in the protein chain sequence(s) from your structure and
+        determining which of those have corresponding binding frequency values, copy and paste the protein chain
+        sequence into the box on the "Query by Sequence" page and run. To get the corresponding protien sequence for
+        your structure, visit <a
+                href="http://www.rcsb.org/pdb/download/viewFastaFiles.do?structureIdList=XXXX&compressionType=uncompressed"
+                target="_blank">http://www.rcsb.org/pdb/download/viewFastaFiles.do?structureIdList=XXXX&compressionType=uncompressed</a>
+        replacing the "XXXX" with a PDB identifier in the URL.</p>
+    <p>Alternatively, if you are interested in seeing which PDB co-complex structures are associated with each
+        domain-ligand interaction, you can find this information in the downloadable tab-delimited file(s) from the
+        Downloads page. Exact mappings of PDB protein chain position to domain match state can be found <a
+                href="http://compbio.cs.princeton.edu/interacdome/BioLiP_2018-09-12-domains-pfam_v31.tsv.gz"
+                target="_blank">here</a>.</p>
+
+    <h5>Q5: How do you determine which ligands to include?</h5>
+    <p>All ligands that we consider to be biologically relevant are obtained from the <a
+            href="https://zhanglab.ccmb.med.umich.edu/BioLiP/" target="_blank">BioLiP database</a>; details about when
+        ligands are presumed to be biologically relevant are provided in the Methods section of their paper (J. Yang, A.
+        Roy and Y. Zhang, Nucleic Acids Res, 2012). Briefly, any ligand that is present more than 15 times in a
+        particular structure and appears on a list of ligands that are observed > 20 times across all protein structures
+        (i.e., on an "artifact" list) is discarded. Any remaining ligand that contacts < 2 protein residues or has only
+        consecutive residue contacts is discarded. Remaining ligands that aren't on the artifact list or that are
+        explicitly mentioned in the reporting paper's PubMed abstract are retained.</p>
+
+    <h5>Q6: What if a domain binds multiple ligands using the same interface?</h5>
+    <p>In modeling per-domain-position binding frequencies, we do not require domain positions to interact <em>exclusively</em>
+        with particular ligands. Indeed, the same domain might interact with multiple different ligands using the same
+        subset of domain positions across structures. For instance, in the RRM domain (PF00076), position 2 and
+        positions 27-45 are involved in binding both DNA and RNA. Such domains would be included in multiple
+        ligand-binding categories.</p>
+    <p>To identify such multi-ligand binding interfaces in a given domain, we include the "ALL_" ligand category in the
+        downloadable InteracDome files indicating how each domain position is involved in binding any ligand type. For
+        those domains with multiple binding partners, high binding frequencies in the "ALL_" category may indicate that
+        those positions are involved in binding multiple ligand types.</p>
+
+    <h5>Q7: Why can't I see how my domain interacts with specific ions or small molecules?</h5>
+    <p>Only domain interactions with DNA base and backbone, RNA base and backbone, peptides, and curated groups of
+        "ions", "metabolites" and "small molecules" are available for interactive browsing on the webserver. Domain
+        interactions with specific small molecule or ion ligands (e.g., ATP or zinc) are available for download only.
+        The reason for this discrepancy is that certain domains can interact with tens or more of highly-similar small
+        molecules, and the webserver slows down substantially when generating nearly identical binding frequency plots
+        for each of these. We feel that a reasonable compromise is to interactively generate plots only for all the
+        ligand groups that we describe in our main paper, and make these plus all specific small molecule and ion
+        interactions available for download.</p>
+
+    <h5>Something else?</h5>
+    <p>If you did not find an answer to your question here, please send a message to <a
+            href="mailto:interacdome@princeton.edu">interacdome@princeton.edu</a>.</p>
+
+{% endblock %}

@@ -64,7 +64,7 @@
     "smtp_port": "{SMTPPORT}",
     "smtp_username": "{SMTPUSER}",
     "smtp_password": "{SMTPPASS}",
-    "sender": "ProtDomain <mail@protdomain.com>"
+    "sender": "ProtDomain <protdomain@princeton.edu>"
   }
 
 }

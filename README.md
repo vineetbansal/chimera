@@ -4,9 +4,7 @@
 A Web application + Python framework to find interaction sites for Protein Domains.
 
 ## Live Demo
-This application is currently hosted for testing at http://protdomain.com
-
-Note that during development, server resources allocated to the above website are minimal, since this is only for development purposes. Queries will take substantially longer than they would in the final release. 
+This application is currently hosted for testing at https://protdomain.princeton.edu
 
 ### Installation
 

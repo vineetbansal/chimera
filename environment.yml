@@ -17,6 +17,7 @@ dependencies:
   - pip:
     - celery
     - coveralls
+    - flower
     - plotly
     - prody
     - pytest-cov

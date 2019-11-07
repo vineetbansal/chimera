@@ -96,7 +96,7 @@ def index():
                 error_msg = 'Please provide an email address for sending results.'
             else:
                 job = query.delay(seq_text=seq_text, save_results=True, email_address=email_address, algorithm=algorithm,
-                            domain_algorithm=domain_algorithm)
+                            domain_algorithm=domain_algorithm, silent=True)
                 job_id = job.id
         else:
             domain_dataframe, binding_dataframe, result_filename = query(sequences=sequences, save_results=True,

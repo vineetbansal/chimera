@@ -20,8 +20,6 @@ rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 # At runtime, the static libraries are preferred over the .so unless we do the following.
 RUN ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 
-EXPOSE 5000
-
 RUN mkdir $APP_DIR/ && mkdir $APP_DIR/src && mkdir $APP_DIR/tests
 
 COPY environment.yml $APP_DIR

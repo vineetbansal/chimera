@@ -6,10 +6,12 @@ from chimera.core import query as sequence_query
 from chimera.utils import email, parse_fasta
 
 app = Celery('tasks', broker=config.celery.broker, backend=config.celery.backend)
+app.control.enable_events()
+# app.conf.task_serializer = 'pickle'
 
 
 @app.task
-def query(sequences=None, seq_text=None, save_results=False, email_address=None, algorithm='dsprint', domain_algorithm='hmmer'):
+def query(sequences=None, seq_text=None, save_results=False, email_address=None, algorithm='dsprint', domain_algorithm='hmmer', silent=False):
     """
     Query 1 or more sequences and send final results to an email address
 
@@ -25,7 +27,9 @@ def query(sequences=None, seq_text=None, save_results=False, email_address=None,
         hmmer
         hmmerweb
         dpuc2
-    :return: A 3-tuple of values
+    :param silent: A boolean indicating whether we return anything
+        Useful when this function is executed in asynchronous mode to avoid serialization issues with returned objects
+    :return: If silent is False, a 3-tuple of values
         0: DataFrame containing Hmmer matches
         1: DataFrame containing Ligand-binding frequency data
         2: The file path of saved results if save_results=True, None otherwise
@@ -48,4 +52,6 @@ def query(sequences=None, seq_text=None, save_results=False, email_address=None,
     if email_address is not None and email_address.strip():
         email(email_address, f'ProtDomain Results for job {query.request.id}', 'ProtDomain Results are attached.', [result_filename])
 
-    return domains, df, result_filename
+    if not silent:
+        return domains, df, result_filename
+

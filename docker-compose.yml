@@ -12,16 +12,16 @@ services:
       - CELERY_BROKER=redis://chimera_redis
       - CELERY_BACKEND=redis://chimera_redis
     ports:
-      - 80:5000
+      - 127.0.0.1:5000:5000
+    volumes:
+      - ${PFAM_DIR}:/pfam:z
     depends_on:
       - celery
-    volumes:
-      - ${PFAM_DIR}:/pfam
 
   celery:
     container_name: chimera_celery
     build: .
-    image: chimera_celery
+    image: chimera
     environment:
       - SMTPHOST
       - SMTPPORT
@@ -30,14 +30,31 @@ services:
       - CELERY_BROKER=redis://chimera_redis
       - CELERY_BACKEND=redis://chimera_redis
     command: python -m celery worker -l info -A chimera.tasks.app
+    volumes:
+      - ${PFAM_DIR}:/pfam:z
     depends_on:
       - redis
+
+  flower:
+    container_name: chimera_flower
+    build: .
+    image: chimera
+    environment:
+      - SMTPHOST
+      - SMTPPORT
+      - SMTPUSER
+      - SMTPPASS
+      - CELERY_BROKER=redis://chimera_redis
+      - CELERY_BACKEND=redis://chimera_redis
+    ports:
+      - 127.0.0.1:5001:5001
+    command: python -m flower -A chimera.tasks.app --port=5001
     volumes:
-      - ${PFAM_DIR}:/pfam
+      - ${PFAM_DIR}:/pfam:z
+    depends_on:
+      - celery
 
   redis:
     container_name: chimera_redis
     image: redis:4.0.5-alpine
-    command: ["redis-server", "--appendonly", "yes"]
-    volumes:
-      - ${PFAM_DIR}:/pfam
+    command: redis-server --appendonly yes

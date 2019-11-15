@@ -74,7 +74,12 @@ with path(chimera.data, 'interacdome_allresults.tsv') as p:
     df_dl = pd.read_csv(p, sep='\t', header=0)
     logger.info(f'Read {len(df_dl)} records from interacdome_allresults.tsv')
 
-# Unpivoted binding-frequencies table which has been pre-filtered onwedsf
+df_dl_dsprint = None
+with path(chimera.data, 'dsprint_allresults.tsv') as p:
+    df_dl_dsprint = pd.read_csv(p, sep='\t', header=0)
+    logger.info(f'Read {len(df_dl_dsprint)} records from dsprint_allresults.tsv')
+
+# Unpivoted binding-frequencies table which has been pre-filtered on
 # num_nonidentical_instances/num_structures/max_achieved_precision as per the config file
 # TODO: Generate/cache on demand rather than ahead of time!
 binding_frequencies_interacdome = None

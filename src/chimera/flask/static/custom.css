@@ -30,3 +30,7 @@ main {
 code {
   font-size: 80%;
 }
+
+textarea {
+  font-family: courier, "courier new", monospace;
+}

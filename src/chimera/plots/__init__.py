@@ -5,7 +5,23 @@ import plotly
 import plotly.graph_objs as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 
+from chimera.core import LIGAND_TYPES
 from chimera import config
+
+
+# Each ligand 'type' is denoted in it's own color (in the bars/legend), to conform to the colors used in publication.
+LIGAND_TYPE_COLORS = {
+    'rna': '#e41a1c',
+    'dna': '#377eb8',
+    'ion': '#4daf4a',
+    'peptide': '#984ea3',
+    'sm': '#ff7f00',
+    'metabolite': '#9993d5',
+    'dnabase': '#d8c12e',
+    'dnabackbone': '#e0948e',
+    'rnabase': '#7a9baf',
+    'rnabackbone': '#8baabc'
+}
 
 
 def binding_freq_plot_data_domain(pfam_id):
@@ -19,7 +35,7 @@ def binding_freq_plot_data_domain(pfam_id):
     ]
 
     bars = []
-    for ligand_type in ('peptide', 'ion', 'metabolite', 'sm', 'dna', 'dnabase', 'dnabackbone', 'rna', 'rnabase', 'rnabackbone'):
+    for ligand_type in LIGAND_TYPES:
         df = df_dl[df_dl.ligand_type == ligand_type]
         if len(df) == 1:
             row = df.iloc[0]
@@ -46,6 +62,7 @@ def binding_freq_plot_data_sequence(seq, domain_df, df):
         data[j, :] = bf.values
 
     traces = []
+    colorway = []
     for ligand_type, row in zip(ligand_types, data):
         traces.append(
             go.Bar(
@@ -56,6 +73,7 @@ def binding_freq_plot_data_sequence(seq, domain_df, df):
                 yaxis="y1"
             )
         )
+        colorway.append(LIGAND_TYPE_COLORS.get(ligand_type, '#ccc'))
 
     """
     Box plots to show domains on an x-axis that is aligned with the above x-axis for the bar plot.
@@ -78,4 +96,14 @@ def binding_freq_plot_data_sequence(seq, domain_df, df):
                 )
             )
 
-    return traces
+    return {
+        'data': traces,
+        'layout': {
+            "xaxis": {"anchor": "y"},
+            "yaxis": {"anchor": "x", "domain": [0.2, 1.0]},
+            "xaxis2": {"anchor": "y2", "matches": "x"},
+            "yaxis2": {"anchor": "x2", "domain": [0.0, 0.2]},
+            "colorway": colorway
+        }
+    }
+

@@ -1,18 +1,60 @@
 {% extends "base.html" %}
 
+{% block css %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/css/select2.min.css" rel="stylesheet" />
+{% endblock %}
+
+{% block javascript %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.6-rc.0/js/select2.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
+<script type="text/javascript" charset="utf-8">
+    $(document).ready(function() {
+        $('.select2').select2();
+        var data = {{ data | safe }};
+        if (data.length > 0) {
+            Plotly.plot('bargraph', data, {});
+        }
+    });
+</script>
+{% endblock %}
+
+
 {% block main %}
-<h1>dSPRINT</h1>
-<p>dSPRINT is a machine learning framework for protein <b>d</b>omain <b>S</b>equence-based <b>PR</b>ediction of <b>INT</b>eraction-sites.</p>
+<h1>dSprint</h1>
 
 <div class="container-fluid">
     <div class="row">
         <div class="col">
-
                 <img src="{{ url_for('static', filename='img/dsprint.png') }}" width="100%"/>
-                <p style="margin-top:1em; font-size:1.15em;">
-                    Details coming <b>soon</b>.
-                </p>
+        </div>
+    </div>
 
+    <div class="row">
+        <div class="col">
+            <div class="card">
+              <h5 class="card-header">View Per-Position Binding Frequencies</h5>
+              <div class="card-body">
+                <p class="card-text">The complete set of domain interactions (including with particular ions or small molecules) is available for
+                    download.</p>
+
+                  <form class="form" action="" method="post">
+                      <div class="form-group">
+                          <label for="pfam_id">Domain (organized by Pfam identifier)</label>
+                            <select class="select2" name="pfam_id" class="form-control" style="width: 300px;">
+                                {% for pfam_id in pfam_ids %}
+                                <option {% if pfam_id==selected_pfam_id %}selected="selected"{% endif %} value="{{ pfam_id }}">{{ pfam_id }}</option>
+                                {% endfor %}
+                            </select>
+                      </div>
+                      <button type="submit" class="btn btn-primary">Go</button>
+                  </form>
+
+                  <div class="chart" id="bargraph">
+                  </div>
+
+              </div>
+            </div>
         </div>
     </div>
 

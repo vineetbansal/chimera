@@ -7,7 +7,6 @@ from chimera.utils import email, parse_fasta
 
 app = Celery('tasks', broker=config.celery.broker, backend=config.celery.backend)
 app.control.enable_events()
-# app.conf.task_serializer = 'pickle'
 
 
 @app.task

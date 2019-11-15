@@ -1,4 +1,3 @@
-import os.path
 import logging
 import pandas as pd
 import json
@@ -18,9 +17,24 @@ logger = logging.getLogger(__name__)
 ctcf = read_text('chimera.data.sample', 'ctcf.fa')
 
 
-@bp.route('/dsprint')
+@bp.route('/dsprint', methods=['GET', 'POST'])
 def dsprint():
-    return render_template('dsprint.html')
+    from chimera import df_dl_dsprint as df_dl
+
+    df_dl = df_dl[
+        (df_dl.num_nonidentical_instances >= config.web.min_instances) &
+        (df_dl.num_structures >= config.web.min_structures)
+    ]
+
+    pfam_ids = pd.unique(df_dl['pfam_id'])
+
+    selected_pfam_id = None
+    data = []
+    if request.method == 'POST':
+        selected_pfam_id = request.form['pfam_id']
+        data = binding_freq_plot_data_domain(selected_pfam_id)
+
+    return render_template('dsprint.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
 
 
 @bp.route('/dpuc2')
@@ -105,15 +119,8 @@ def index():
             session['result_filename'] = result_filename
 
             for i, sequence in enumerate(sequences):
-                bars = binding_freq_plot_data_sequence(str(sequence.seq), domain_dataframe, binding_dataframe)
-                plotly_dict = {'data': bars, 'seq_index': i + 1, 'seq_name': sequence.name}
-                plotly_dict['layout'] = {
-                    "xaxis": {"anchor": "y"},
-                    "yaxis": {"anchor": "x", "domain": [0.2, 1.0]},
-                    "xaxis2": {"anchor": "y2", "matches": "x"},
-                    "yaxis2": {"anchor": "x2", "domain": [0.0, 0.2]}
-                }
-                data_plotly.append(plotly_dict)
+                d = binding_freq_plot_data_sequence(str(sequence.seq), domain_dataframe, binding_dataframe)
+                data_plotly.append(d)
 
             n_hits = len(domain_dataframe)
 
@@ -146,25 +153,4 @@ def seq_results():
     except:  # nopep8
         abort(404)
 
-
-@bp.route('/data')
-def data():
-    s = ''
-    data_path = request.args.get('path', '/data')
-    s += '<br/>Data Path=' + data_path
-    try:
-        files = os.listdir(data_path)
-        s += '<br/>No of files=' + str(len(files))
-        for file in files:
-            s += '<br/>' + str(file)
-    except Exception as e:
-        s += '<br/>' + str(e)
-
-    try:
-        x = open(os.path.join(data_path, 'greeting.txt'), 'r').read()
-        s += '<br/>Greeting=' + str(x)
-    except Exception as e:
-        s += '<br/>' + str(e)
-
-    return s
 

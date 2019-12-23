@@ -11,6 +11,7 @@ dependencies:
   - matplotlib
   - pandas=0.24.2
   - pip
+  - pyarrow
   - pytest
   - python=3.7
   - tqdm=4.31.1

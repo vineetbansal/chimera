@@ -83,11 +83,11 @@ with path(chimera.data, 'dsprint_allresults.tsv') as p:
 # num_nonidentical_instances/num_structures/max_achieved_precision as per the config file
 # TODO: Generate/cache on demand rather than ahead of time!
 binding_frequencies_interacdome = None
-with path(chimera.data, 'binding_frequencies_interacdome.csv') as p:
-    binding_frequencies_interacdome = pd.read_csv(p, index_col=False)
-    logger.info(f'Read {len(binding_frequencies_interacdome)} records from binding_frequencies_interacdome.csv')
+with path(chimera.data, 'binding_frequencies_interacdome.parquet') as p:
+    binding_frequencies_interacdome = pd.read_parquet(p)
+    logger.info(f'Read {len(binding_frequencies_interacdome)} records from binding_frequencies_interacdome.parquet')
 
 binding_frequencies_dsprint = None
-with path(chimera.data, 'binding_frequencies_dsprint.csv') as p:
-    binding_frequencies_dsprint = pd.read_csv(p, index_col=False)
-    logger.info(f'Read {len(binding_frequencies_dsprint)} records from binding_frequencies_dsprint.csv')
+with path(chimera.data, 'binding_frequencies_dsprint.parquet') as p:
+    binding_frequencies_dsprint = pd.read_parquet(p)
+    logger.info(f'Read {len(binding_frequencies_dsprint)} records from binding_frequencies_dsprint.parquet')

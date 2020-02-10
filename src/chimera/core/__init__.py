@@ -8,10 +8,6 @@ from chimera.core.domain import HmmerDomainFinder, HmmerWebDomainFinder, Dpuc2Do
 logger = logging.getLogger(__name__)
 
 
-# The 10 different ligand-types we support for ligand-protein binding frequency algorithms
-LIGAND_TYPES = ('peptide', 'ion', 'metabolite', 'sm', 'dna', 'dnabase', 'dnabackbone', 'rna', 'rnabase', 'rnabackbone')
-
-
 def seq_to_matchstates(seq, start, end):
     """
     Determine the 'index' and 'matchstate' information of a given sequence.

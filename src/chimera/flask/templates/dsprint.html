@@ -11,10 +11,8 @@
 <script type="text/javascript" charset="utf-8">
     $(document).ready(function() {
         $('.select2').select2();
-        var data = {{ data | safe }};
-        if (data.length > 0) {
-            Plotly.plot('bargraph', data, {});
-        }
+        var data = JSON.parse('{{ data | safe }}');
+        Plotly.plot('bargraph', data.data, data.layout);
     });
 </script>
 {% endblock %}
@@ -34,11 +32,8 @@
     <div class="row">
         <div class="col">
             <div class="card">
-              <h5 class="card-header">View Per-Position Binding Frequencies</h5>
+              <h5 class="card-header">View Per-Position Binding Scores</h5>
               <div class="card-body">
-                <p class="card-text">The complete set of domain interactions (including with particular ions or small molecules) is available for
-                    download.</p>
-
                   <form class="form" action="" method="post">
                       <div class="form-group">
                           <label for="pfam_id">Domain (organized by Pfam identifier)</label>

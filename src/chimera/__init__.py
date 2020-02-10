@@ -61,23 +61,30 @@ def setup_config():
 
 config = setup_config()
 
-# TODO: Why do we have 2 tsvs?
-# TODO: Names of these dataframe directly ported from R - not intuitive!
+# The 10 different ligand-types we support for ligand-protein binding frequency algorithms
+LIGAND_TYPES = ('peptide', 'ion', 'metabolite', 'sm', 'dna', 'dnabase', 'dnabackbone', 'rna', 'rnabase', 'rnabackbone')
 
-df_bp = None
-with path(chimera.data, 'interacdome_fordownload.tsv') as p:
-    df_bp = pd.read_csv(p, sep='\t', header=0)
-    logger.info(f'Read {len(df_bp)} records from interacdome_fordownload.tsv')
+# TODO: Names of these DataFrames directly ported from R - not intuitive!
 
 df_dl = None
-with path(chimera.data, 'interacdome_allresults.tsv') as p:
-    df_dl = pd.read_csv(p, sep='\t', header=0)
-    logger.info(f'Read {len(df_dl)} records from interacdome_allresults.tsv')
+with path(chimera.data, 'interacdome_fordownload.tsv') as p:
+    df = pd.read_csv(p, sep='\t', header=0)
+    logger.info(f'Read {len(df)} records from interacdome_fordownload.tsv')
+
+    # TODO: The way results are filtered from the 'master' tsv file for InteracDome is to compare the 'ligand_type'
+    # column values with the uppercased ligand types, with a '_' appended at the end.
+    # This leaves out 7 records that don't have a '_' at the end
+    # (i.e. records that have ligand types 'SM', 'RNA', 'DNA')
+    # We do the same here for backward compatibility, but this will need further investigation.
+    old_ligand_types = [x.upper() + '_' for x in LIGAND_TYPES]
+    df_dl = df[df['ligand_type'].isin(old_ligand_types)]
+    df_dl['ligand_type'] = df_dl['ligand_type'].map(lambda x: x.replace('_', '').lower())
+    logger.info(f'Read {len(df_dl)} filtered binding frequency records for InteracDome')
 
 df_dl_dsprint = None
-with path(chimera.data, 'dsprint_allresults.tsv') as p:
+with path(chimera.data, 'dsprint_fordownload.tsv') as p:
     df_dl_dsprint = pd.read_csv(p, sep='\t', header=0)
-    logger.info(f'Read {len(df_dl_dsprint)} records from dsprint_allresults.tsv')
+    logger.info(f'Read {len(df_dl_dsprint)} records from dsprint_fordownload.tsv')
 
 # Unpivoted binding-frequencies table which has been pre-filtered on
 # num_nonidentical_instances/num_structures/max_achieved_precision as per the config file

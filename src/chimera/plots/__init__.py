@@ -5,8 +5,7 @@ import plotly
 import plotly.graph_objs as go
 from plotly.colors import DEFAULT_PLOTLY_COLORS
 
-from chimera.core import LIGAND_TYPES
-from chimera import config
+from chimera import config, LIGAND_TYPES
 
 
 # Each ligand 'type' is denoted in it's own color (in the bars/legend), to conform to the colors used in publication.
@@ -24,30 +23,41 @@ LIGAND_TYPE_COLORS = {
 }
 
 
-def binding_freq_plot_data_domain(pfam_id):
+def binding_freq_plot_data_domain(pfam_id, algorithm):
 
-    from chimera import df_dl
+    if algorithm == 'interacdome':
+        from chimera import df_dl
+        df_dl = df_dl[
+            (df_dl.num_nonidentical_instances >= config.web.min_instances) &
+            (df_dl.num_structures >= config.web.min_structures)
+        ]
+    elif algorithm == 'dsprint':
+        from chimera import df_dl_dsprint as df_dl
 
-    df_dl = df_dl[
-        (df_dl.num_nonidentical_instances >= config.web.min_instances) &
-        (df_dl.num_structures >= config.web.min_structures) &
-        (df_dl.pfam_id == pfam_id)
-    ]
+    df_dl = df_dl[df_dl.pfam_id == pfam_id]
 
-    bars = []
+    traces = []
+    colorway = []
     for ligand_type in LIGAND_TYPES:
         df = df_dl[df_dl.ligand_type == ligand_type]
         if len(df) == 1:
             row = df.iloc[0]
-            bars.append(
+            traces.append(
                 go.Bar(
                     x=list(range(1, row.domain_length + 1)),
                     y=list(map(float, row.binding_frequencies.split(','))),
                     name=ligand_type
                 )
             )
+            colorway.append(LIGAND_TYPE_COLORS.get(ligand_type, '#ccc'))
 
-    return json.dumps(bars, cls=plotly.utils.PlotlyJSONEncoder)
+    # return json.dumps(traces, cls=plotly.utils.PlotlyJSONEncoder)
+    return {
+        'data': traces,
+        'layout': {
+            "colorway": colorway
+        }
+    }
 
 
 def binding_freq_plot_data_sequence(seq, domain_df, df):

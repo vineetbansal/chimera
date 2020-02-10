@@ -19,7 +19,7 @@
 
         $.each(data , function(index, bars_data) {
           var div_id = "bargraph" + index;
-          $('#bargraphs').append("<div class='chart' id='"+div_id+"'></div>");
+          $('#bargraphs').append("<div class='card'><div class='card-body'><p class=\"card-text\">Click on the legend entries to toggle display for that ligand type.</p><div class='chart' id='"+div_id+"'></div></div></div>");
           Plotly.plot(div_id, bars_data.data, bars_data.layout);
         });
 
@@ -38,7 +38,7 @@
             <div class="card">
               <h5 class="card-header">Search Protein Sequence for Domains</h5>
               <div class="card-body">
-                <p class="card-text">Paste your amino acid protein sequence(s) into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding frequencies.</p>
+                <p class="card-text">Paste your amino acid protein sequence(s) into the box below to search for instances of interaction domains and view corresponding per-position ligand-binding scores.</p>
                   <form class="form" action="" method="post" enctype="multipart/form-data">
                       <div class="form-group">
                           <textarea class="form-control" id="seqTextArea" name="seqTextArea" rows="6" aria-describedby="seqTextHelpBlock">{{ seq }}</textarea>
@@ -63,14 +63,14 @@
                           </small>
                       </div>
                       <div class="form-group">
-                          <label for="algorithm1Select">Ligand-Protein Binding Freq. Algorithm</label>
+                          <label for="algorithm1Select">Ligand-Protein Binding Scoring Algorithm</label>
                           <select id="algorithm1Select" name="algorithm1Select" aria-describedby="algorithm1SelectHelpBlock">
                               <option {% if algorithm=="dsprint" %}selected="selected"{% endif %} value="dsprint">dSPRINT</option>
                               <option {% if algorithm=="interacdome" %}selected="selected"{% endif %} value="interacdome">InteracDome</option>
                           </select>
                           <small id="algorithm1SelectHelpBlock" class="form-text text-muted">
                               The site supports <a href="{{ url_for('web.dsprint') }}" target="_blank">dSPRINT</a> and <a href="{{ url_for('web.interacdome') }}" target="_blank">InteracDome</a>
-                              algorithms for determining ligand-binding frequencies.
+                              algorithms for determining ligand-binding scoring.
                           </small>
                       </div>
                       <div class="form-group">
@@ -162,12 +162,14 @@
         <div class="row my-4">
             <div class="col">
                 <div class="card">
-                  <h5 class="card-header">Domain-inferred binding frequencies across sequence positions</h5>
+                  <h5 class="card-header">Domain-inferred binding scores across sequence positions</h5>
                   <div class="card-body">
                       <div class="alert alert-success" role="alert">
                           Please <a href="{{ url_for('web.seq_results') }}">download</a> the data to get complete results.
                       </div>
+                      {% if algorithm=="interacdome" %}
                       <p class="card-text">Only binding frequencies from domain-ligand interactions that are <strong>confident</strong> (i.e., achieved a cross-validated precision of at least 0.5) are annotated to your sequence.</p>
+                      {% endif %}
                       <div id="bargraphs"></div>
                   </div>
                 </div>

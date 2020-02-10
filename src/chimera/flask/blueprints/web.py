@@ -19,20 +19,16 @@ ctcf = read_text('chimera.data.sample', 'ctcf.fa')
 
 @bp.route('/dsprint', methods=['GET', 'POST'])
 def dsprint():
-    from chimera import df_dl_dsprint as df_dl
+    from chimera import df_dl_dsprint
 
-    df_dl = df_dl[
-        (df_dl.num_nonidentical_instances >= config.web.min_instances) &
-        (df_dl.num_structures >= config.web.min_structures)
-    ]
-
-    pfam_ids = pd.unique(df_dl['pfam_id'])
+    pfam_ids = pd.unique(df_dl_dsprint['pfam_id'])
 
     selected_pfam_id = None
-    data = []
+    data = ''
     if request.method == 'POST':
         selected_pfam_id = request.form['pfam_id']
-        data = binding_freq_plot_data_domain(selected_pfam_id)
+        data = binding_freq_plot_data_domain(selected_pfam_id, algorithm='dsprint')
+        data = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
 
     return render_template('dsprint.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
 
@@ -59,10 +55,11 @@ def interacdome():
     pfam_ids = pd.unique(df_dl['pfam_id'])
 
     selected_pfam_id = None
-    data = []
+    data = ''
     if request.method == 'POST':
         selected_pfam_id = request.form['pfam_id']
-        data = binding_freq_plot_data_domain(selected_pfam_id)
+        data = binding_freq_plot_data_domain(selected_pfam_id, algorithm='interacdome')
+        data = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
 
     return render_template('interacdome.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
 

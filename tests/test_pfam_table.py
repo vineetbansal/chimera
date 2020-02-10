@@ -1,5 +1,5 @@
 from unittest import TestCase
-from chimera import df_bp
+from chimera import df_dl
 
 
 class TsvTestCase(TestCase):
@@ -13,4 +13,4 @@ class TsvTestCase(TestCase):
         """
         All distinct pfam ids in the table
         """
-        self.assertEqual(4128, len(df_bp['pfam_id'].unique()))
+        self.assertEqual(4128, len(df_dl['pfam_id'].unique()))

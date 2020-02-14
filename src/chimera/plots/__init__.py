@@ -51,7 +51,6 @@ def binding_freq_plot_data_domain(pfam_id, algorithm):
             )
             colorway.append(LIGAND_TYPE_COLORS.get(ligand_type, '#ccc'))
 
-    # return json.dumps(traces, cls=plotly.utils.PlotlyJSONEncoder)
     return {
         'data': traces,
         'layout': {
@@ -110,7 +109,8 @@ def binding_freq_plot_data_sequence(seq, domain_df, df):
         'data': traces,
         'layout': {
             "xaxis": {"anchor": "y"},
-            "yaxis": {"anchor": "x", "domain": [0.2, 1.0]},
+            "yaxis": {"anchor": "x", "domain": [0.25, 1.0]},
+            "yaxis": {"anchor": "x", "domain": [0.25, 1.0]},
             "xaxis2": {"anchor": "y2", "matches": "x"},
             "yaxis2": {"anchor": "x2", "domain": [0.0, 0.2]},
             "colorway": colorway

@@ -28,11 +28,13 @@ class DomainFinder:
         """
         raise NotImplementedError('Subclasses must implement this.')
 
-    def domain_table(self, sequences):
+    def domain_table(self, sequences, full_domains=False):
 
         hits = self.find_domains(sequences)
         results = []  # A list-of-dicts that we'll convert to a DataFrame
         for hit in hits:
+            if full_domains and not (hit['alihmmfrom'] == 1 and hit['alihmmto'] == hit['aliM']):
+                continue
             pfam_name = hit['alihmmacc'][:7] + '_' + hit['alihmmname']  # TODO: Why this strange clipping of names?
             results.append({
                 'query_id': hit['query_id'],

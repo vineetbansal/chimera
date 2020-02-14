@@ -17,7 +17,7 @@ class HmmrTestCase(TestCase):
 
     def testHmmDomains(self):
         results = self.domain_finder.find_domains([ctcf])
-        self.assertEqual(6, len(results))
+        self.assertEqual(7, len(results))
 
         top_record = results[0]
         self.assertEqual('zf-C2H2', top_record['alihmmname'])

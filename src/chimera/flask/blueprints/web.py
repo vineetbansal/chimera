@@ -69,6 +69,11 @@ def interacdome_faq():
     return render_template('interacdome_faq.html')
 
 
+@bp.route('/interacdome_download')
+def interacdome_download():
+    return render_template('interacdome_download.html')
+
+
 @bp.route('/', methods=['GET', 'POST'])
 def index():
 
@@ -80,6 +85,7 @@ def index():
     algorithm = ''
     domain_algorithm = ''
     email_address = ''
+    full_domains = False
 
     job_id = ''
     n_sequences = 0
@@ -95,6 +101,7 @@ def index():
         domain_algorithm = request.form['algorithm0Select']
         algorithm = request.form['algorithm1Select']
         email_address = request.form['emailaddress'].strip()
+        full_domains = request.form.get('fullDomainCheck', 'off') == 'on'
 
         sequences = parse_fasta(seq_text)
         n_sequences = len(sequences)
@@ -106,13 +113,16 @@ def index():
             if not email_address:
                 error_msg = 'Please provide an email address for sending results.'
             else:
-                job = query.delay(seq_text=seq_text, save_results=True, email_address=email_address, algorithm=algorithm,
-                            domain_algorithm=domain_algorithm, silent=True)
+                job = query.delay(seq_text=seq_text, save_results=True, email_address=email_address,
+                                  algorithm=algorithm, domain_algorithm=domain_algorithm, silent=True,
+                                  full_domains=full_domains)
                 job_id = job.id
         else:
             domain_dataframe, binding_dataframe, result_filename = query(sequences=sequences, save_results=True,
-                                                                         email_address=email_address, algorithm=algorithm,
-                                                                         domain_algorithm=domain_algorithm)
+                                                                         email_address=email_address,
+                                                                         algorithm=algorithm,
+                                                                         domain_algorithm=domain_algorithm,
+                                                                         full_domains=full_domains)
             session['result_filename'] = result_filename
 
             for i, sequence in enumerate(sequences):
@@ -139,7 +149,8 @@ def index():
         sample_seq=ctcf,
         algorithm=algorithm,
         domain_algorithm=domain_algorithm,
-        email_address=email_address
+        email_address=email_address,
+        full_domains=full_domains
     )
 
 

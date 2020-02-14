@@ -95,9 +95,7 @@ class HmmerDomainFinder(DomainFinder):
                         result['aliaseq'] = alignments[key]
 
                         # TODO: The old Interacdome website does the following filtering of results for Hmmer
-                        # This does not seem applicable while running dPuc2
-                        if result['bitscore'] > 0 and result['alihmmfrom'] == 1 and \
-                                result['alihmmto'] == result['aliM']:
+                        if result['bitscore'] > 0:
                             results.append(result)
 
         finally:

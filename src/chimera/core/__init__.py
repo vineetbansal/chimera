@@ -32,7 +32,7 @@ def seq_to_matchstates(seq, start, end):
     return match_states, seq_indices
 
 
-def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
+def query(sequences, algorithm='dsprint', domain_algorithm='hmmer', full_domains=False):
     """
     Find out binding frequency data suitable for display on the site
     :param sequences: A list of Bio.SeqRecord.SeqRecord objects
@@ -44,6 +44,7 @@ def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
         hmmerweb
         dpuc2
         domstratstats
+    :param full_domains: A boolean indicating whether we restrict results to full domain matches.
     :return: A 2-tuple of values
         0: DataFrame containing Hmmer matches
         1: DataFrame containing Ligand-binding frequency data
@@ -56,7 +57,7 @@ def query(sequences, algorithm='dsprint', domain_algorithm='hmmer'):
         'domstratstats': DomStratStatsDomainFinder
     }[domain_algorithm]()
 
-    domains = domain_finder.domain_table(sequences)
+    domains = domain_finder.domain_table(sequences, full_domains=full_domains)
 
     domains[['match_states', 'seq_indices']] = domains.apply(
         lambda row: pd.Series(seq_to_matchstates(row.aliseq, row.target_start, row.target_end)),

@@ -58,6 +58,10 @@
                               <option {% if domain_algorithm=="dpuc2" %}selected="selected"{% endif %} value="dpuc2">dPUC2</option>
                               <option {% if domain_algorithm=="domstratstats" %}selected="selected"{% endif %} value="domstratstats">DomStratStats</option>
                           </select>
+                          <div class="form-check">
+                          <input type="checkbox" class="form-check-input" id="fullDomainCheck" name="fullDomainCheck" {% if full_domains %}checked{% endif %}>
+                          <label class="form-check-label" for="fullDomainCheck">Restrict results to full domain matches</label>
+                          </div>
                           <small id="algorithm0SelectHelpBlock" class="form-text text-muted">
                               <a href="http://hmmer.org/" target="_blank">Hmmer</a>, <a href="{{ url_for('web.dpuc2') }}">dPuc2</a>, and <a href="{{ url_for('web.domstratstats') }}" target="_blank">DomStratStats</a> approaches to domain selection are supported.
                           </small>

@@ -20,12 +20,26 @@
 
 {% block main %}
 <h1>dSPRINT</h1>
-<p>dSPRINT is a machine learning framework for protein <b>d</b>omain <b>S</b>equence-based <b>PR</b>ediction of <b>INT</b>eraction-sites.</p>
+<p class="lead">dSPRINT is a machine learning framework predicting interaction sites in human protein domains</p>
 
 <div class="container-fluid">
+
     <div class="row">
         <div class="col">
+
                 <img src="{{ url_for('static', filename='img/dsprint.png') }}" width="100%"/>
+                <p style="margin-top:1em; font-size:1.15em;">
+                    This website presents dSPRINT predictions of 6,503 human protein domains from Pfam (v32) and their
+                    interactions with DNA, RNA, small molecules, peptides and ions.
+                </p>
+
+                <p>
+                    <strong>
+                    A. Etzion-Fuchs, D. Todd and M. Singh (2020) "dSPRINT: predicting DNA, RNA, ion, peptide and small
+                        molecule interaction sites within protein domains", <em>Manuscript in preparation</em>
+                    </strong>
+                </p>
+
         </div>
     </div>
 

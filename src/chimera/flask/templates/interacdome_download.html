@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block css %}
+<link href="{{ url_for('static', filename='vendor/fontawesome/css/all.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block main %}
+
+    <h3>InteracDome</h3>
+    <h4>Download Database Files</h4>
+
+    <p>
+        We provide the following sets of per-domain-position binding frequency values, which are described in detail in
+        our paper. Briefly, these sets are:
+        <ul>
+            <li>
+                <strong>Representable-NR Interactions</strong> correspond to domain-ligand interactions that had
+                nonredundant instances across three or more distinct PDB structures.
+                <em>We recommend using this collection to learn more about domain binding properties.</em>
+                <p>
+                <a class="btn btn-outline-primary" href="{{ url_for('static', filename='download/InteracDome_v0.3-representableNR.tsv') }}">
+                    <i class="fa fa-download"></i> Representable-NR Domain-Ligand Interactions</a>
+                </p>
+            </li>
+            <li>
+                <strong>Confident Interactions</strong> correspond to domain-ligand interactions that had nonredundant
+                instances across three or more distinct PDB entries and achieved a cross-validated precision of at least
+                0.5.
+                <em>We recommend using this collection to annotate potential ligand-binding positions in protein
+                    sequences.</em>
+                <p>
+                    <a class="btn btn-outline-primary" href="{{ url_for('static', filename='download/InteracDome_v0.3-confident.tsv') }}">
+                    <i class="fa fa-download"></i> Confident Domain-Ligand Interactions</a>
+                </p>
+            </li>
+            <li>
+                <strong>Representable Interactions</strong> correspond to domain-ligand interactions that have at least
+                one representative structure in the PDB.
+                <p>
+                <a class="btn btn-outline-primary" href="{{ url_for('static', filename='download/InteracDome_v0.3-representable.tsv') }}">
+                    <i class="fa fa-download"></i> All (Representable) Domain-Ligand Interactions</a>
+                </p>
+            </li>
+        </ul>
+
+    </p>
+
+    <h4>Download Source Code</h4>
+    <p>All source code to regenerate InteracDome values from co-complex structures is available at
+        <a href="http://github.com/Singh-Lab/InteracDome" target="_blank">http://github.com/Singh-Lab/InteracDome</a></p>
+
+{% endblock %}

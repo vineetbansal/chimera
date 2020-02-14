@@ -10,7 +10,8 @@ app.control.enable_events()
 
 
 @app.task
-def query(sequences=None, seq_text=None, save_results=False, email_address=None, algorithm='dsprint', domain_algorithm='hmmer', silent=False):
+def query(sequences=None, seq_text=None, save_results=False, email_address=None, algorithm='dsprint',
+          domain_algorithm='hmmer', silent=False, full_domains=False):
     """
     Query 1 or more sequences and send final results to an email address
 
@@ -28,6 +29,7 @@ def query(sequences=None, seq_text=None, save_results=False, email_address=None,
         dpuc2
     :param silent: A boolean indicating whether we return anything
         Useful when this function is executed in asynchronous mode to avoid serialization issues with returned objects
+    :param full_domains: A boolean indicating whether we restrict results to full domain matches.
     :return: If silent is False, a 3-tuple of values
         0: DataFrame containing Hmmer matches
         1: DataFrame containing Ligand-binding frequency data
@@ -40,7 +42,8 @@ def query(sequences=None, seq_text=None, save_results=False, email_address=None,
     if email_address is not None and not save_results:
         raise RuntimeError('save_results should be True if an email address is specified.')
 
-    domains, df = sequence_query(sequences, algorithm=algorithm, domain_algorithm=domain_algorithm)
+    domains, df = sequence_query(sequences, algorithm=algorithm, domain_algorithm=domain_algorithm,
+                                 full_domains=full_domains)
 
     result_filename = None
     if save_results:

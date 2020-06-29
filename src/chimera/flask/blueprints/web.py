@@ -1,11 +1,10 @@
 import logging
-import pandas as pd
 import json
 import plotly
 from importlib.resources import read_text
 from flask import Blueprint, request, render_template, send_file, session, abort
 
-from chimera import config
+from chimera import config, dsprint_pfam_ids, interacdome_pfam_ids
 from chimera.utils import parse_fasta
 from chimera.tasks import query
 from chimera.plots import binding_freq_plot_data_domain, binding_freq_plot_data_sequence
@@ -19,10 +18,8 @@ ctcf = read_text('chimera.data.sample', 'ctcf.fa')
 
 @bp.route('/dsprint', methods=['GET', 'POST'])
 def dsprint():
-    from chimera import df_dl_dsprint
 
-    pfam_ids = pd.unique(df_dl_dsprint['pfam_id'])
-
+    pfam_ids = {p: p + (' *' if p in interacdome_pfam_ids else '') for p in dsprint_pfam_ids}
     selected_pfam_id = None
     data = ''
     if request.method == 'POST':
@@ -45,15 +42,6 @@ def domstratstats():
 
 @bp.route('/interacdome', methods=['GET', 'POST'])
 def interacdome():
-    from chimera import df_dl
-
-    df_dl = df_dl[
-        (df_dl.num_nonidentical_instances >= config.web.min_instances) &
-        (df_dl.num_structures >= config.web.min_structures)
-    ]
-
-    pfam_ids = pd.unique(df_dl['pfam_id'])
-
     selected_pfam_id = None
     data = ''
     if request.method == 'POST':
@@ -61,7 +49,7 @@ def interacdome():
         data = binding_freq_plot_data_domain(selected_pfam_id, algorithm='interacdome')
         data = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
 
-    return render_template('interacdome.html', pfam_ids=pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
+    return render_template('interacdome.html', pfam_ids=interacdome_pfam_ids, selected_pfam_id=selected_pfam_id, data=data)
 
 
 @bp.route('/interacdome_faq')

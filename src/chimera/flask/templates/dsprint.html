@@ -53,9 +53,13 @@
                           <label for="pfam_id">Domain (organized by Pfam identifier)</label>
                             <select class="select2" name="pfam_id" class="form-control" style="width: 300px;">
                                 {% for pfam_id in pfam_ids %}
-                                <option {% if pfam_id==selected_pfam_id %}selected="selected"{% endif %} value="{{ pfam_id }}">{{ pfam_id }}</option>
+                                <option {% if pfam_id==selected_pfam_id %}selected="selected"{% endif %} value="{{ pfam_id }}">{{ pfam_ids[pfam_id] }}</option>
                                 {% endfor %}
                             </select>
+                            <small id="pfam_id_HelpBlock" class="form-text text-muted">
+                                Pfam Identifiers that are also available for <a href="{{ url_for('web.interacdome') }}" target="_blank">InteracDome</a>
+                                are suffixed with an asterisk.
+                            </small>
                       </div>
                       <button type="submit" class="btn btn-primary">Go</button>
                   </form>

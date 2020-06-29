@@ -67,6 +67,7 @@ LIGAND_TYPES = ('peptide', 'ion', 'metabolite', 'sm', 'dna', 'dnabase', 'dnaback
 # TODO: Names of these DataFrames directly ported from R - not intuitive!
 
 df_dl = None
+interacdome_pfam_ids = None
 with path(chimera.data, 'interacdome_fordownload.tsv') as p:
     df = pd.read_csv(p, sep='\t', header=0)
     logger.info(f'Read {len(df)} records from interacdome_fordownload.tsv')
@@ -79,12 +80,24 @@ with path(chimera.data, 'interacdome_fordownload.tsv') as p:
     old_ligand_types = [x.upper() + '_' for x in LIGAND_TYPES]
     df_dl = df[df['ligand_type'].isin(old_ligand_types)]
     df_dl['ligand_type'] = df_dl['ligand_type'].map(lambda x: x.replace('_', '').lower())
-    logger.info(f'Read {len(df_dl)} filtered binding frequency records for InteracDome')
+    logger.info(f'Read {len(df_dl)} filtered binding frequency records for InteracDome after filtering for ligand type')
+
+    # Filtered records to be displayed on the website
+    df_dl_filtered = df_dl[
+        (df_dl.num_nonidentical_instances >= config.web.min_instances) &
+        (df_dl.num_structures >= config.web.min_structures)
+    ]
+    logger.info(f'Read {len(df_dl_filtered)} filtered binding frequency records for InteracDome for website display')
+
+    interacdome_pfam_ids = pd.unique(df_dl_filtered['pfam_id'])
 
 df_dl_dsprint = None
+dsprint_pfam_ids = None
 with path(chimera.data, 'dsprint_fordownload.tsv') as p:
     df_dl_dsprint = pd.read_csv(p, sep='\t', header=0)
     logger.info(f'Read {len(df_dl_dsprint)} records from dsprint_fordownload.tsv')
+
+    dsprint_pfam_ids = pd.unique(df_dl_dsprint['pfam_id'])
 
 # Unpivoted binding-frequencies table which has been pre-filtered on
 # num_nonidentical_instances/num_structures/max_achieved_precision as per the config file

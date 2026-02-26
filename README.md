@@ -22,21 +22,45 @@ On the demo server above, the contents of the `/mnt/pfam_data` look like the fol
 -rw-r--r-- 1 root root  593831723 Aug 23 14:33 Pfam-A.hmm.h3m
 -rw-r--r-- 1 root root  698539111 Aug 23 14:33 Pfam-A.hmm.h3p
 ```
+
+The container is then run with the options `-v /mnt/protdomain_data:/pfam` to make this folder accessible to the container.
+
+### Testing
+
 The application can be run as a container using the podman/docker commands below.
 
 ```
 podman build -t chimera .
 ```
 
-Test the container by running the unit tests:
+Assuming `/path/to/pfam` is a folder with the structure outlined above, test the container by running the unit tests:
 
 ```
 podman run -it --rm -v /path/to/pfam:/pfam:z localhost/chimera:latest pytest
 ```
 
-If tests run okay, start the Flask server (the default command).
+The `-z` is an SELinux-specific flag. You may or may not need it.
+
+### Running
+
+If tests run okay:
+
+Write a `.env` file at the root of the project that supplies envvars to the containers. At the time of this writing, it includes (values withheld):
+
 ```
-podman run -d --rm -p 80:5000 -v /path/to/pfam:/pfam:z localhost/chimera:latest
+SMTPHOST=
+SMTPPORT=
+SMTPUSER=
+SMTPPASS=
+PFAM_DIR=/path/to/pfam
 ```
 
-The container is then run with the options `-v /mnt/protdomain_data:/pfam` to make this folder accessible to the container.
+`PFAM_DIR` should be set to whatever worked in the `Testing` section above.
+
+Now run:
+
+```
+podman-compose up -d
+```
+
+The webapp runs on port `5000` but this can be controlled in `docker-compose.yml`.

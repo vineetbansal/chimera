@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/vineetbansal/chimera.svg?branch=master)](https://travis-ci.org/vineetbansal/chimera)
-
 # chimera
 A Web application + Python framework to find interaction sites for Protein Domains.
 
@@ -7,18 +5,6 @@ A Web application + Python framework to find interaction sites for Protein Domai
 This application is currently hosted for testing at https://protdomain.princeton.edu
 
 ### Installation
-
-The application can be run as a container using the Docker commands below.
-
-```
-docker build -t chimera .
-docker run -it --rm chimera pytest
-```
-
-If tests run okay, start the Flask server (the default command).
-```
-docker run -d --rm -p 80:5000 -v /path/to/pfam/files:/pfam chimera
-```
 
 Note that a valid [Pfam Database](https://pfam.xfam.org/) needs to be accessible *from within* the container. Pfam files are not included in this source (or as part of the built container image) because of size considerations.
 
@@ -36,4 +22,21 @@ On the demo server above, the contents of the `/mnt/pfam_data` look like the fol
 -rw-r--r-- 1 root root  593831723 Aug 23 14:33 Pfam-A.hmm.h3m
 -rw-r--r-- 1 root root  698539111 Aug 23 14:33 Pfam-A.hmm.h3p
 ```
+The application can be run as a container using the podman/docker commands below.
+
+```
+podman build -t chimera .
+```
+
+Test the container by running the unit tests:
+
+```
+podman run -it --rm -v /path/to/pfam:/pfam:z localhost/chimera:latest pytest
+```
+
+If tests run okay, start the Flask server (the default command).
+```
+podman run -d --rm -p 80:5000 -v /path/to/pfam:/pfam:z localhost/chimera:latest
+```
+
 The container is then run with the options `-v /mnt/protdomain_data:/pfam` to make this folder accessible to the container.

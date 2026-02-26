@@ -25,7 +25,6 @@ def query(sequences=None, seq_text=None, save_results=False, email_address=None,
         interacdome
     :param domain_algorithm: Domain-finding algorithm (case-sensitive). One of:
         hmmer
-        hmmerweb
         dpuc2
     :param silent: A boolean indicating whether we return anything
         Useful when this function is executed in asynchronous mode to avoid serialization issues with returned objects

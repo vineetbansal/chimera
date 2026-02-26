@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 
 from chimera import binding_frequencies_interacdome, binding_frequencies_dsprint
-from chimera.core.domain import HmmerDomainFinder, HmmerWebDomainFinder, Dpuc2DomainFinder, DomStratStatsDomainFinder
+from chimera.core.domain import HmmerDomainFinder, Dpuc2DomainFinder, DomStratStatsDomainFinder
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,6 @@ def query(sequences, algorithm='dsprint', domain_algorithm='hmmer', full_domains
         interacdome
     :param domain_algorithm: Domain-finding algorithm (case-sensitive). One of:
         hmmer
-        hmmerweb
         dpuc2
         domstratstats
     :param full_domains: A boolean indicating whether we restrict results to full domain matches.
@@ -52,7 +51,6 @@ def query(sequences, algorithm='dsprint', domain_algorithm='hmmer', full_domains
 
     domain_finder = {
         'hmmer': HmmerDomainFinder,
-        'hmmerweb': HmmerWebDomainFinder,
         'dpuc2': Dpuc2DomainFinder,
         'domstratstats': DomStratStatsDomainFinder
     }[domain_algorithm]()
